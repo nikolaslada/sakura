@@ -35,9 +35,7 @@ class GeneralTree {
     * @param
     * @return void
     */
-    public function __construct ($table) {
-
-        if(!$table instanceof Table) throw new InvalidArgumentException('Parameter $table must be instance of Table class. Instance of :' . get_class($table) . '.');
+    public function __construct (Table $table) {
 
 		$this->table = $table;
 		$columns = $this->table->getColumns();

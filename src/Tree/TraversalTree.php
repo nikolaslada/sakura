@@ -425,6 +425,7 @@ class TraversalTree extends GeneralTree implements ITreeDriver {
 
 	/**
 	* It creates SQL for selecting whole tree.
+	* @param bool Pass True, If id column is needed.
 	* @return DibiFluent
 	*/
 	public function selectTreeSqlFactory ($selectId = False) {
@@ -448,6 +449,7 @@ class TraversalTree extends GeneralTree implements ITreeDriver {
 	* @see $this->selectLeftRight() or $this->setLeftRight()
 	* @param bool If True is passed, it includes node, which ID was passed before.
 	* @param bool If True is passed, it will return in order from root to node.
+	* @param bool Pass True, If id column is needed.
 	* @return DibiFluent
 	*/
 	public function selectPathSqlFactory ($includingNode, $fromRoot, $selectId = False) {

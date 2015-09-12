@@ -73,14 +73,14 @@ interface ITreeDriver {
 	public function selectNode ($DibiFluent);
 
 	/**
-    * It executes SQL selects and loads rows to $this->treeFromDB as whole tree.
+	* It executes SQL selects and loads rows to $this->treeFromDB as whole tree.
 	* @see $this->selectTreeSqlFactory()
 	* @param DibiFluent Pass NULL or your DibiFluent SQL from selectTreeSqlFactory().
-    * @return void
+	* @return void
 	* @throws SakuraNoRowReturnedException
 	* @throws SakuraRowNotFoundException
-    */
-    public function selectTree ($DibiFluent);
+	*/
+	public function selectTree ($DibiFluent);
 
 
 	/**
@@ -90,26 +90,26 @@ interface ITreeDriver {
 	* @param DibiFluent You can pass your edited DibiFluent instance from $this->selectBranchSqlFactory(). You can skip it.
 	* @return void
 	* @throws SakuraRowNotFoundException
-    * @throws SakuraNoRowReturnedException
+	* @throws SakuraNoRowReturnedException
 	* @throws SakuraNotSupportedException
 	*/
 	public function selectBranch ($DibiFluent);
 
 
-    /**
-    * It generates set of rows. Each row represents every level in a tree between root and passed ID of node.
+	/**
+	* It generates set of rows. Each row represents every level in a tree between root and passed ID of node.
 	* @see $this->setId()
 	* @see $this->selectNodeSqlFactory()
 	* @see $this->emptyList()
-    * @param bool If False is passed, it returns only superior nodes.
-    * @param bool If True is passed, rows will be sorted by depth from root.
-    * @param DibiFluent Pass NULL or your DibiFluent SQL from selectNodeSqlFactory().
-    * @return void|NULL
+	* @param bool If False is passed, it returns only superior nodes.
+	* @param bool If True is passed, rows will be sorted by depth from root.
+	* @param DibiFluent Pass NULL or your DibiFluent SQL from selectNodeSqlFactory().
+	* @return void|NULL
 	* @throws SakuraRowNotFoundException
 	* @throws SakuraNoRowReturnedException
 	* @throws SakuraException
-    */
-    public function selectPath ($includingNode, $fromRoot, $DibiFluent);
+	*/
+	public function selectPath ($includingNode, $fromRoot, $DibiFluent);
 
 
 	/**
@@ -132,14 +132,14 @@ interface ITreeDriver {
 
 	/** Inserts, Updates and Deletes **/
 
-    /**
-    * Insert one node to DB and update table.
-    * @see $this->setNode()
+	/**
+	* Insert one node to DB and update table.
+	* @see $this->setNode()
 	* @see $this->chooseTarget
-    * @return void
+	* @return void
 	* @throws SakuraException
-    */
-    public function insertNode ();
+	*/
+	public function insertNode ();
 
 
 	/**
@@ -157,36 +157,36 @@ interface ITreeDriver {
 	* @throws DibiException
 	* @throws LogicException
 	*/
-    public function updateBranch ();
+	public function updateBranch ();
 
 
 	/** SQL Factories **/
 
 	/**
-    * It generates basic DibiFluent SQL for getting whole tree.
-    * @return DibiFluent
-    */
-    public function selectTreeSqlFactory ($selectId);
+	* It generates basic DibiFluent SQL for getting whole tree.
+	* @return DibiFluent
+	*/
+	public function selectTreeSqlFactory ($selectId);
 
 	public function baseSqlFactory ($selectId);
 
-    /**
-    * It generates basic DibiFluent SQL for getting a branch.
-    * @return DibiFluent
-    */
-    public function selectBranchSqlFactory ($selectId);
+	/**
+	* It generates basic DibiFluent SQL for getting a branch.
+	* @return DibiFluent
+	*/
+	public function selectBranchSqlFactory ($selectId);
 
-    /**
-    * It generates basic DibiFluent SQL for getting path from root to node.
-    * @return DibiFluent
-    */
-    public function selectPathSqlFactory ($includingNode, $fromRoot, $selectId);
+	/**
+	* It generates basic DibiFluent SQL for getting path from root to node.
+	* @return DibiFluent
+	*/
+	public function selectPathSqlFactory ($includingNode, $fromRoot, $selectId);
 
-    /**
-    * It generates basic DibiFluent SQL for getting one node.
-    * @return DibiFluent
-    */
-    public function selectNodeSqlFactory ($selectId);
+	/**
+	* It generates basic DibiFluent SQL for getting one node.
+	* @return DibiFluent
+	*/
+	public function selectNodeSqlFactory ($selectId);
 
 
 	/** Getters **/
