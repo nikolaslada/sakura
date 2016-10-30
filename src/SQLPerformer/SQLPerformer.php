@@ -1,5 +1,6 @@
 <?php
 
+namespace Sakura;
 /**
 * This file is part of the Sakura project.
 * Copyright (c) 2015 Nikolas Lada

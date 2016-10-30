@@ -1,14 +1,15 @@
 <?php
 
+namespace Sakura;
 /**
 * This file is part of the Sakura project.
 * Copyright (c) 2015 Nikolas Lada
 */
 
-class SakuraException extends Exception {
+class SakuraException extends \Exception {
 
 
-	protected		$tableName;
+	protected $tableName;
 
 
 	public function __construct ($message = NULL, $code = 0, $tableName = '') {
@@ -35,7 +36,7 @@ class SakuraNotImplementedException extends SakuraException {}
 class SakuraNoRowReturnedException extends SakuraException {
 
 
-	protected		$sql;
+	protected $sql;
 
 
 	public function __construct ($message = NULL, $code = 0, $tableName = '', $sql = '') {
@@ -56,7 +57,7 @@ class SakuraNoRowReturnedException extends SakuraException {
 class SakuraRowNotFoundException extends SakuraException {
 
 
-	protected		$id;
+	protected $id;
 
 
 	public function __construct ($message = NULL, $code = 0, $tableName = '', $id = 0) {
@@ -77,9 +78,9 @@ class SakuraRowNotFoundException extends SakuraException {
 class SakuraBadColumnException extends SakuraException {
 
 
-	protected		$columns;
+	protected $columns;
 
-	protected		$type;
+	protected $type;
 
 
 	public function __construct ($message = NULL, $code = 0, $tableName = '', $columns = NULL, $type = '') {
@@ -107,9 +108,9 @@ class SakuraBadColumnException extends SakuraException {
 class SakuraBadTargetException extends SakuraException {
 
 
-	protected		$from;
+	protected $from;
 
-	protected		$whereTo;
+	protected $whereTo;
 
 
 	public function __construct ($message = NULL, $code = 0, $tableName = '', $from = NULL, $whereTo = NULL) {

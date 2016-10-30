@@ -1,5 +1,11 @@
 <?php
 
+namespace Sakura\Tree;
+
+use Sakura\Table\Table;
+use Dibi\Connection;
+use Dibi\Row;
+use Dibi\Fluent;
 /**
 * This file is part of the Sakura project.
 * Copyright (c) 2015 Nikolas Lada
@@ -7,13 +13,16 @@
 
 class GeneralTree {
 
+    /** @var Dibi\Connection */
+    protected           $connection;
+    
     /** @var Table */
     protected		$table;
 
-    /** @var DibiResult[]|array */
+    /** @var Dibi\Result[]|array */
     protected		$treeFromDB;
 
-    /** @var array|DibiRow Property for passing node. */
+    /** @var array|Dibi\Row Property for passing node. */
     protected		$node;
 
     /** @var int Property for passing ID. */
@@ -24,317 +33,367 @@ class GeneralTree {
 
     protected		$id;
 
-	protected		$whereTo;
+    protected		$whereTo;
 
-	protected		$initializeRecursion;
+    protected		$initializeRecursion;
 
 
     /**
-    * TableTree constructor.
-    * @param Table Put appropriate Table object.
-    * @param
-    * @return void
-    */
-    public function __construct (Table $table) {
+     * GeneralTree constructor.
+     * @param Connection $connection
+     * @param Table $table Put appropriate Table object.
+     * @return void
+     */
+    public function __construct (Connection $connection, Table $table) {
 
-		$this->table = $table;
-		$columns = $this->table->getColumns();
-		$this->id = $columns['id'];
-		$this->initializeRecursion = True;
+        $this->connection = $connection;
+        $this->table = $table;
+        $columns = $this->table->getColumns();
+        $this->id = $columns['id'];
+        $this->initializeRecursion = True;
     }
 
 
 
 
-	/** Setters and settings **/
+    /** Setters and settings **/
 
 
-	/**
-	* Value of $id will be passed to $this->idValue.
-	* @param int|string Pass ID of node.
-	* @return void
-	* @throws InvalidArgumentException
-	*/
-	public function setId ($id) {
+    /**
+    * Value of $id will be passed to $this->idValue.
+    * @param int|string Pass ID of node.
+    * @return void
+    * @throws InvalidArgumentException
+    */
+    public function setId ($id) {
 
-		if(!is_numeric($id)) throw new InvalidArgumentException("The \$id parameter is not numeric. Value: $id; type: " . gettype($id) . ".");
+        if(!is_numeric($id)) {
+            throw new \InvalidArgumentException("The \$id parameter is not numeric. Value: $id; type: " . gettype($id) . ".");
+        }
 
-		$this->idValue = $id;
-	}
-
-
-	/**
-	* Value of $id will be passed to $this->rootId.
-	* @param int
-	* @return void
-	* @throws LogicException
-	* @throws InvalidArgumentException
-	*/
-	public function setRoot ($id) {
-
-		if(isset($this->tree) and isset($this->rootId)) throw new LogicException('Both - $this->tree and $this->rootId properties are already set. You can not change yet.');
-		if(!is_int($id)) throw new InvalidArgumentException('The $id argument is not integer. Type of value is ' . gettype($id) . '.');
-
-		$this->rootId = $id;
-	}
+        $this->idValue = $id;
+    }
 
 
-	/**
-	* Value of $node will be passed to $this->node.
-	* @param array|DibiRow Pass values with appropriate keys.
-	* @return void
-	* @throws InvalidArgumentException
-	*/
-	public function setNode ($node) {
+    /**
+    * Value of $id will be passed to $this->rootId.
+    * @param int
+    * @return void
+    * @throws LogicException
+    * @throws InvalidArgumentException
+    */
+    public function setRoot ($id) {
 
-		if(!is_array($node) and !$node instanceof DibiRow) throw new InvalidArgumentException('$node argument must be array or DibiRow object. Type of $node is ' . gettype($node) . '.');
+        if(isset($this->tree) and isset($this->rootId)) {
+            throw new \LogicException('Both - $this->tree and $this->rootId properties are already set. You can not change yet.');
+        }
+        
+        if (!is_int($id)) {
+            throw new \InvalidArgumentException('The $id argument is not integer. Type of value is ' . gettype($id) . '.');
+        }
 
-		$this->node = $node;
-	}
-
-
-	/**
-	* It empties the node's values - $this->idValue and $this->node. If you prefers "autoselect", call it before calling $this->setId()!
-	* @return void
-	*/
-	public function emptyNodesValues () {
-
-		unset($this->idValue);
-		unset($this->node);
-	}
+        $this->rootId = $id;
+    }
 
 
-	/**
-	* It empties tree's properties - $this->treeFromDB and $this->rootId.
-	* @return void
-	*/
-	public function emptyTree () {
+    /**
+    * Value of $node will be passed to $this->node.
+    * @param array|Dibi\Row Pass values with appropriate keys.
+    * @return void
+    * @throws InvalidArgumentException
+    */
+    public function setNode ($node) {
 
-		unset($this->treeFromDB);
-		unset($this->rootId);
-	}
+            if(!is_array($node) and !$node instanceof Row) {
+                throw new \InvalidArgumentException('$node argument must be array or Dibi\Row object. Type of $node is ' . gettype($node) . '.');
+            }
 
-
-	/**
-	* It empties the $this->list property.
-	* @return void
-	*/
-	public function emptyList () {
-
-		unset($this->list);
-	}
+            $this->node = $node;
+    }
 
 
+    /**
+    * It empties the node's values - $this->idValue and $this->node. If you prefers "autoselect", call it before calling $this->setId()!
+    * @return void
+    */
+    public function emptyNodesValues () {
+
+            unset($this->idValue);
+            unset($this->node);
+    }
 
 
-	/** SQL Queries **/
+    /**
+    * It empties tree's properties - $this->treeFromDB and $this->rootId.
+    * @return void
+    */
+    public function emptyTree () {
+
+            unset($this->treeFromDB);
+            unset($this->rootId);
+    }
 
 
-	public function selectNode ($DibiFluent = NULL) {
+    /**
+    * It empties the $this->list property.
+    * @return void
+    */
+    public function emptyList () {
 
-		if(!$DibiFluent instanceof DibiFluent) $DibiFluent = $this->selectNodeSqlFactory();
-
-		$node = $DibiFluent->where("`" . $this->table->getAlias() . "`.`{$this->id}` = %i", $this->getId() )->fetch();
-		if(!$node) throw new SakuraRowNotFoundException("Row not found.", 0, $this->table->getName(), $this->getId() );
-
-		$this->node = $node;
-	}
+            unset($this->list);
+    }
 
 
-	/**
-	* It returns number of all rows in table.
-	* @return int
-	*/
-	public function selectNumOfAllRows () {
 
-		return dibi::fetchSingle("SELECT COUNT(*) FROM `" . $this->table->getName() . "`");
-	}
+
+    /** SQL Queries **/
+
+
+    public function selectNode ($DibiFluent = NULL) {
+
+            if(!$DibiFluent instanceof Fluent) {
+                $DibiFluent = $this->selectNodeSqlFactory();
+            }
+
+            $node = $DibiFluent->where("`" . $this->table->getAlias() . "`.`{$this->id}` = %i", $this->getId() )->fetch();
+            if(!$node) {
+                throw new \Sakura\SakuraRowNotFoundException("Row not found.", 0, $this->table->getName(), $this->getId() );
+            }
+
+            $this->node = $node;
+    }
+
+
+    /**
+    * It returns number of all rows in table.
+    * @return int
+    */
+    public function selectNumOfAllRows () {
+
+            return $this->connection->fetchSingle("SELECT COUNT(*) FROM `" . $this->table->getName() . "`");
+    }
 
 
     /**
     * It generates set of rows. Each row represents every level in a tree between root and passed ID of node.
-	* @see $this->setId()
-	* @see $this->selectPathSqlFactory()
-	* @see $this->emptyList()
+    * @see $this->setId()
+    * @see $this->selectPathSqlFactory()
+    * @see $this->emptyList()
     * @param bool If False is passed, it returns only superior nodes.
     * @param bool If True is passed, rows will be sorted by depth from root.
-    * @param DibiFluent Pass NULL or your DibiFluent SQL from selectNodeSqlFactory().
+    * @param Dibi\Fluent Pass NULL or your Dibi\Fluent SQL from selectNodeSqlFactory().
     * @return void|NULL
-	* @throws SakuraRowNotFoundException
-	* @throw SakuraNoRowReturnedException
+    * @throws SakuraRowNotFoundException
+    * @throw SakuraNoRowReturnedException
     */
     public function selectPath ($includingNode = True, $fromRoot = True, $DibiFluent = NULL) {
 
-		$alias = $this->table->getAlias();
-		if($this->initializeRecursion) {
-			$this->list = array();
-			if(!$DibiFluent instanceof DibiFluent) $DibiFluent = $this->selectPathSqlFactory($includingNode, $fromRoot, $selectId = False);
+        $alias = $this->table->getAlias();
+        if($this->initializeRecursion) {
+            $this->list = array();
+            if (!$DibiFluent instanceof Fluent) {
+                $DibiFluent = $this->selectPathSqlFactory($includingNode, $fromRoot, $selectId = False);
+            }
 
-			$DF = clone $DibiFluent->select("`$alias`.`{$this->parent}`");
-			$node = $DF->where("`$alias`.`{$this->id}` = %i", $this->getId() )->fetch();
+            $DF = clone $DibiFluent->select("`$alias`.`{$this->parent}`");
+            $node = $DF->where("`$alias`.`{$this->id}` = %i", $this->getId() )->fetch();
 
-			if(!$node) throw new SakuraRowNotFoundException("Row not found!", 0, $table, $this->getId() );
+            if(!$node) {
+                throw new \Sakura\SakuraRowNotFoundException("Row not found!", 0, $table, $this->getId());
+            }
 
-			if($includingNode) $this->list[] = $node;
+            if ($includingNode) {
+                $this->list[] = $node;
+            }
 
-			if(empty($node[$this->parent])) return NULL;
-			$this->initializeRecursion = False;
+            if (empty($node[$this->parent])) {
+                return NULL;
+            }
+            
+            $this->initializeRecursion = False;
 
-			$DibiFluent->where("`$alias`.`{$this->id}` = %i", $node[$this->parent]);
-			$this->selectPath($includingNode, $fromRoot, $DibiFluent);
+            $DibiFluent->where("`$alias`.`{$this->id}` = %i", $node[$this->parent]);
+            $this->selectPath($includingNode, $fromRoot, $DibiFluent);
 
-		} else {
-			$node = $DibiFluent->fetch();
-			if(!$node) {
-				$msg = 'Parent\'s node not found! Structure of Parent/Order Tree is broken.';
-				throw new SakuraNoRowReturnedException($msg, 0, $this->table->getName(), dibi::$sql);
-			}
+        } else {
+            $node = $DibiFluent->fetch();
+            if(!$node) {
+                $msg = 'Parent\'s node not found! Structure of Parent/Order Tree is broken.';
+                throw new \Sakura\SakuraNoRowReturnedException($msg, 0, $this->table->getName(), 'dibi::$sql');
+            }
 
-			$this->list[] = $node;
+            $this->list[] = $node;
 
-			if(empty($node[$this->parent])) {
+            if(empty($node[$this->parent])) {
 
-				if($fromRoot) krsort($this->list);
+                if($fromRoot) {
+                    krsort($this->list);
+                }
 
-				$this->initializeRecursion = True;
-				return NULL;
-			}
+                $this->initializeRecursion = True;
+                return NULL;
+            }
 
-			$DibiFluent->where(False);
-			$DibiFluent->where("`$alias`.`{$this->id}` = %i", $node[$this->parent]);
-			$this->selectPath($includingNode, $fromRoot, $DibiFluent);
-		}
+            $DibiFluent->where(False);
+            $DibiFluent->where("`$alias`.`{$this->id}` = %i", $node[$this->parent]);
+            $this->selectPath($includingNode, $fromRoot, $DibiFluent);
+        }
     }
 
 
 
 
-    /** DibiFluent SQL Factories **/
+    /** Dibi\Fluent SQL Factories **/
 
     /**
-    * It generates basic DibiFluent SQL for getting one node.
-    * @return DibiFluent
+    * It generates basic Dibi\Fluent SQL for getting one node.
+    * @return Dibi\Fluent
     */
     public function selectNodeSqlFactory ($selectId = False) {
 
-        $DF = new DibiFluent(dibi::getConnection());
-		if($selectId) $DF = dibi::select("`" . $this->table->getAlias() . "`.`{$this->id}`");
-		else $DF = dibi::select(False);
-
-		return $DF->from('`' . $this->table->getName() . '` AS `' . $this->table->getAlias() . '`');
+        $DF = new Fluent($this->connection);
+        if($selectId) {
+            $DF = $this->connection->select("`" . $this->table->getAlias() . "`.`{$this->id}`");
+        } else { 
+            $DF = $this->connection->select(False);
+        }
+            
+        return $DF->from('`' . $this->table->getName() . '` AS `' . $this->table->getAlias() . '`');
     }
 
 
-	public function selectPathSqlFactory ($includingNode, $fromRoot, $selectId = False) {
+    public function selectPathSqlFactory ($includingNode, $fromRoot, $selectId = False) {
 
-		return $this->selectNodeSqlFactory($selectId);
-	}
-
-
-
-	/** Getters **/
+        return $this->selectNodeSqlFactory($selectId);
+    }
 
 
-	/**
-	* It returns ID. It firstly tries $this->idValue and then ID column in $this->node.
-	* @return int
-	* @throws LogicException
-	*/
-	public function getId () {
 
-		if(!isset($this->idValue)) {
-			if(!isset($this->node[$this->id])) throw new LogicException('Cannot get id! Both $this->id and $this->node[$this->id] are not set. Call $this->setId() before!');
-			return $this->node[$this->id];
-		}
-
-		return $this->idValue;
-	}
+    /** Getters **/
 
 
-	/**
-	* It returns whole node from $this->node and $this->numbered.
-	* @param bool If True is passed it checks whether all registered columns are included.
-	* @param bool If True is passed it checks whether all columns in $this->node are registered / known.
-	* @return array
-	* @throws SakuraNotSupportedException
-	* @throws SakuraBadColumnException
-	*/
-	public function getNode ($containsAll = False, $noUnknown = False) {
+    /**
+    * It returns ID. It firstly tries $this->idValue and then ID column in $this->node.
+    * @return int
+    * @throws LogicException
+    */
+    public function getId () {
 
-		if(!isset($this->node)) throw new SakuraNotSupportedException('The $this->node property is not set.');
+        if(!isset($this->idValue)) {
+            if (!isset($this->node[$this->id])) {
+                throw new \LogicException('Cannot get id! Both $this->id and $this->node[$this->id] are not set. Call $this->setId() before!');
+            }
+            
+            return $this->node[$this->id];
+        }
 
-		if(!is_array($this->node) and !$this->node instanceof DibiRow) SakuraNotSupportedException('Type of $this->node is not supported, instance of : ' . get_class($this->node) . '; type: ' . gettype($this->node) . '.');
-
-		if($containsAll) {
-			$allColumns = $this->table->getAllColumns();
-			foreach($this->node as $column => $v) {
-				foreach($allColumns as $key => $required) {
-					if($column == $required) {
-						unset($allColumns[$key]);
-						break;
-					}
-				}
-			}
-
-			if($allColumns) throw new SakuraBadColumnException('Columns not found!', 0, '', $allColumns, 'notfound');
-		}
-
-		if($noUnknown) {
-			$unknownColumns = array();
-			foreach($this->node as $column => $v) {
-				if(!in_array($column, $this->table->getAllColumns())) $unknownColumns[] = $column;
-			}
-
-			if($unknownColumns) throw new SakuraBadColumnException('There are unknown columns for Table instance!', 0, '', $unknownColumns, 'unknown');
-		}
-
-		if($this->node instanceof DibiRow) return $this->node->toArray();
-		return $this->node;
-	}
+        return $this->idValue;
+    }
 
 
-	/**
-	* It returns 'parent' value.
-	* @return int
-	* @throws SakuraBadColumnException
-	*/
-	public function getParent () {
+    /**
+    * It returns whole node from $this->node and $this->numbered.
+    * @param bool If True is passed it checks whether all registered columns are included.
+    * @param bool If True is passed it checks whether all columns in $this->node are registered / known.
+    * @return array
+    * @throws SakuraNotSupportedException
+    * @throws SakuraBadColumnException
+    */
+    public function getNode ($containsAll = False, $noUnknown = False) {
 
-		if(!isset($this->node[$this->parent])) throw new SakuraBadColumnException('Column not found in $this->node.', 0, '', array('parent' => $this->parent), 'notfound');
+        if(!isset($this->node)) {
+            throw new \Sakura\SakuraNotSupportedException('The $this->node property is not set.');
+        }
+            
+        if(!is_array($this->node) and !$this->node instanceof Row) {
+            SakuraNotSupportedException('Type of $this->node is not supported, instance of : ' . get_class($this->node) . '; type: ' . gettype($this->node) . '.');
+        }
 
-		return $this->node[$this->parent];
-	}
+        if($containsAll) {
+            $allColumns = $this->table->getAllColumns();
+            foreach($this->node as $column => $v) {
+                foreach($allColumns as $key => $required) {
+                    if($column == $required) {
+                        unset($allColumns[$key]);
+                        break;
+                    }
+                }
+            }
+
+            if($allColumns) {
+                throw new \Sakura\SakuraBadColumnException('Columns not found!', 0, '', $allColumns, 'notfound');
+            }
+        }
+
+        if($noUnknown) {
+            $unknownColumns = array();
+            foreach($this->node as $column => $v) {
+                if (!in_array($column, $this->table->getAllColumns())) {
+                    $unknownColumns[] = $column;
+                }
+            }
+
+            if($unknownColumns) {
+                throw new \Sakura\SakuraBadColumnException('There are unknown columns for Table instance!', 0, '', $unknownColumns, 'unknown');
+            }
+        }
+
+        if($this->node instanceof Row) {
+            return $this->node->toArray();
+        }
+        
+        return $this->node;
+    }
 
 
-	/**
-	* It returns non-hierarchical result - value of the $this->list property.
-	* @return array
-	* @throws LogicException
-	*/
-	public function getList () {
+    /**
+    * It returns 'parent' value.
+    * @return int
+    * @throws SakuraBadColumnException
+    */
+    public function getParent () {
 
-		if(!isset($this->list)) throw new LogicException('The $this->list property is not set. Maybe it was not yet created from queries.');
+        if(!isset($this->node[$this->parent])) {
+            throw new \Sakura\SakuraBadColumnException('Column not found in $this->node.', 0, '', array('parent' => $this->parent), 'notfound');
+        }
 
-		return $this->list;
-	}
-
-
-	/**
-	* It returns result from DB.
-	* @return DibiResult
-	* @throws LogicException
-	*/
-	public function getTreeFromDB () {
-
-		if(!isset($this->treeFromDB)) throw new LogicException('The $this->treeFromDB property is not set. Maybe it was already converted to $this->tree.');
-
-		return $this->treeFromDB;
-	}
+        return $this->node[$this->parent];
+    }
 
 
-	public function getTable () {
+    /**
+    * It returns non-hierarchical result - value of the $this->list property.
+    * @return array
+    * @throws LogicException
+    */
+    public function getList () {
 
-		return $this->table;
-	}
+        if(!isset($this->list)) {
+            throw new \LogicException('The $this->list property is not set. Maybe it was not yet created from queries.');
+        }
+
+        return $this->list;
+    }
+
+
+    /**
+    * It returns result from DB.
+    * @return Dibi\Result
+    * @throws LogicException
+    */
+    public function getTreeFromDB () {
+
+        if(!isset($this->treeFromDB)) {
+            throw new \LogicException('The $this->treeFromDB property is not set. Maybe it was already converted to $this->tree.');
+        }
+
+        return $this->treeFromDB;
+    }
+
+
+    public function getTable () {
+
+        return $this->table;
+    }
 
 }

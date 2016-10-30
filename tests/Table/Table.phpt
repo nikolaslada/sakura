@@ -6,6 +6,7 @@
 */
 
 use Tester\Assert;
+use Sakura\Table\Table;
 
 
 require_once __DIR__ . '/../../tests_config.php';
@@ -15,8 +16,8 @@ require_once __DIR__ . '/../../src/Table/Table.php';
 $columns = array('id' => 'id');
 $columns[1] = 'column';
 
-$test = new Table($name = 'order_example_2', $columns, $alias = '', $enabledTransaction = False);
-$tree = new Table('traversal_example_2', array(), '', True);
+$test = new Table($dibiConnection, $name = 'order_example_2', $columns, $alias = '', $enabledTransaction = False);
+$tree = new Table($dibiConnection, 'traversal_example_2', array(), '', True);
 
 Assert::false($test->getEnabledTransaction());
 Assert::true($tree->getEnabledTransaction());

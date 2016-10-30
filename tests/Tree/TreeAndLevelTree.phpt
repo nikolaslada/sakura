@@ -6,6 +6,8 @@
 */
 
 use Tester\Assert;
+use Sakura\Table\Table;
+use Sakura\Tree\Tree;
 
 require_once __DIR__ . '/../../tests_config.php';
 require_once __DIR__ . '/../../src/SakuraException.php';
@@ -50,10 +52,10 @@ function printWholeTable($flatTree) {
 
 $columns = array('id' => 'id', 'name' => 'name');
 $tableExample2 = 'level_example_2';
-$table_level_example = new Table($tableExample2, $columns, $alias = 'l', $enabledTransaction = False);
+$table_level_example = new Table($dibiConnection, $tableExample2, $columns, $alias = 'l', $enabledTransaction = False);
 $table_level_example->addNumbered('L', 'L', 7, 1, 'int');
 
-$level = new Tree($table_level_example, $driver = 'level', $checkStructure = True, $levelName = 'L');
+$level = new Tree($dibiConnection, $table_level_example, $driver = 'level', $checkStructure = True, $levelName = 'L');
 
 $defaultOrd = array(0 => 'R', 'X', 'G', 'L', 'V', '7', '6', 'J', 'E', 'I', 'C', 'N', 'Q', 'S', '3', 'M', 'B', 'K', '0');
 
@@ -122,7 +124,7 @@ checkWholeTable($flatTree, $defaultOrd);
 
 
 
-dibi::begin();
+$dibiConnection->begin();
 $level->setId(9);
 $level->deleteNode();
 
@@ -133,12 +135,12 @@ $flatTree = $level->getTreeFromDB();
 // printWholeTable($flatTree);
 
 checkWholeTable($flatTree, array(0 => 'R', 'X', 'G', 'L', 'V', '7', 'J', 'E', 'I', 'C', 'N', 'Q', 'S', '3', 'M', 'B', 'K', '0'));
-dibi::rollback();
+$dibiConnection->rollback();
 
 
 
 
-dibi::begin();
+$dibiConnection->begin();
 $level->setId(3);
 $level->deleteNode();
 
@@ -149,12 +151,12 @@ $flatTree = $level->getTreeFromDB();
 // printWholeTable($flatTree);
 
 checkWholeTable($flatTree, array(0 => 'R', 'X', 'G', 'L', 'V', '7', '6', 'E', 'I', 'C', 'N', 'Q', 'S', '3', 'M', 'B', 'K', '0'));
-dibi::rollback();
+$dibiConnection->rollback();
 
 
 
 
-dibi::begin();
+$dibiConnection->begin();
 $level->setId(10);
 $level->deleteNode();
 
@@ -165,12 +167,12 @@ $flatTree = $level->getTreeFromDB();
 // printWholeTable($flatTree);
 
 checkWholeTable($flatTree, array(0 => 'R', 'X', 'G', 'L', 'V', '7', '6', 'J', 'I', 'C', 'N', 'Q', 'S', '3', 'M', 'B', 'K', '0'));
-dibi::rollback();
+$dibiConnection->rollback();
 
 
 
 
-dibi::begin();
+$dibiConnection->begin();
 $level->setId(4);
 $level->deleteNode();
 
@@ -181,12 +183,12 @@ $flatTree = $level->getTreeFromDB();
 // printWholeTable($flatTree);
 
 checkWholeTable($flatTree, array(0 => 'R', 'X', 'G', 'L', 'V', '7', '6', 'J', 'E', 'I', 'C', 'N', 'Q', '3', 'M', 'B', 'K', '0'));
-dibi::rollback();
+$dibiConnection->rollback();
 
 
 
 
-dibi::begin();
+$dibiConnection->begin();
 $level->setId(19);
 $level->deleteNode();
 
@@ -197,12 +199,12 @@ $flatTree = $level->getTreeFromDB();
 // printWholeTable($flatTree);
 
 checkWholeTable($flatTree, array(0 => 'R', 'X', 'G', 'L', 'V', '7', '6', 'J', 'E', 'I', 'C', 'N', 'Q', 'S', '3', 'M', 'B', 'K'));
-dibi::rollback();
+$dibiConnection->rollback();
 
 
 
 
-dibi::begin();
+$dibiConnection->begin();
 $level->setId(2);
 $level->deleteNode();
 unset($defaultOrd[1]);
@@ -287,13 +289,13 @@ checkWholeTable($flatTree, $defaultOrd);
 
 
 
-$rootID = dibi::fetchSingle("SELECT `id` FROM `$tableExample2` WHERE `name` = %s", "A");
+$rootID = $dibiConnection->fetchSingle("SELECT `id` FROM `$tableExample2` WHERE `name` = %s", "A");
 $level->chooseTarget($rootID);
 $level->setId(4);
 /*
 Assert::exception(function() use ($level) {
 	$level->updateBranch();
-}, 'SakuraNotSupportedException');
+}, '\Sakura\SakuraNotSupportedException');
 */
 
 
@@ -439,7 +441,7 @@ $level->chooseTarget($id = 13);
 
 Assert::exception(function() use ($level) {
 	$level->updateBranch();
-}, 'SakuraNotSupportedException');
+}, '\Sakura\SakuraNotSupportedException');
 
 
 
@@ -448,10 +450,10 @@ Assert::exception(function() use ($level) {
 
 Assert::exception(function() use ($level) {
 	$level->chooseTarget($id = 4294967295); // that's enough ;-)
-}, 'SakuraRowNotFoundException');
+}, '\Sakura\SakuraRowNotFoundException');
 
 Assert::exception(function() use ($level) {
 	$level->chooseTarget(0);
-}, 'DomainException');
+}, '\DomainException');
 
-dibi::rollback();
+$dibiConnection->rollback();

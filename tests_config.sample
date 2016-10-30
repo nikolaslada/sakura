@@ -12,7 +12,7 @@ Tester\Environment::setup();
 date_default_timezone_set('Europe/Prague');
 
 $config = array(
-	'driver' => 'mysql',
+	'driver' => 'mysqli',
 	'host' => 'localhost',
 	'username' => 'username',
 	'password' => 'secretPassword',
@@ -20,4 +20,4 @@ $config = array(
 	'database' => 'sakuraphp',
 );
 
-dibi::connect($config);
+$dibiConnection = new \Dibi\Connection($config);

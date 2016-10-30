@@ -6,6 +6,8 @@
 */
 
 use Tester\Assert;
+use Sakura\Table\Table;
+use Sakura\Tree\Tree;
 
 require_once __DIR__ . '/../../tests_config.php';
 require_once __DIR__ . '/../../src/SakuraException.php';
@@ -41,19 +43,18 @@ function printWholeTable($flatTree) {
 	}
 }
 
-
 $columns = array('id' => 'id', 'parent' => 'parent', 'left' => 'left', 'right' => 'right', 'name' => 'name');
 $tableExample2 = 'traversal_example_2';
 $defaultOrd = array(0 => 'R', 'X', 'G', 'L', 'V', '7', '6', 'J', 'E', 'I', 'C', 'N', 'Q', 'S', '3', 'M', 'B', 'K', '0');
-$traversal_example = new Table($tableExample2, $columns, $alias = 't', $enabledTransaction = False);
+$tableTraversalE2 = new Table($dibiConnection, $tableExample2, $columns, $alias = 't', $enabledTransaction = False);
 
-$traversal = new Tree($traversal_example, $driver = 't');
+$traversal = new Tree($dibiConnection, $tableTraversalE2, $driver = 't');
 
 $selectTreeSQL = $traversal->selectTreeSqlFactory();
 $selectTreeSQL->select("`$alias`.`name`");
 $traversal->selectTree($selectTreeSQL);
 $flatTree = $traversal->getTreeFromDB();
-
+//printWholeTable($flatTree);
 checkWholeTable($flatTree, $defaultOrd);
 
 
@@ -109,7 +110,7 @@ $numberOfSubnodes = $traversal->selectNumOfSubnodes();
 Assert::same( $numberOfSubnodes, 18 );
 
 
-dibi::begin();
+$dibiConnection->begin();
 
 
 $traversal->setId(2);
@@ -203,13 +204,13 @@ checkWholeTable($flatTree, $defaultOrd);
 
 
 
-$rootID = dibi::fetchSingle("SELECT `id` FROM `$tableExample2` WHERE `name` = %s", "A");
+$rootID = $dibiConnection->fetchSingle("SELECT `id` FROM `$tableExample2` WHERE `name` = %s", "A");
 $traversal->chooseTarget($rootID);
 $traversal->setId(4);
 
 Assert::exception(function() use ($traversal) {
 	$traversal->updateBranch();
-}, 'SakuraNotSupportedException');
+}, '\Sakura\SakuraNotSupportedException');
 
 
 $traversal->chooseTarget(1);
@@ -231,10 +232,10 @@ checkWholeTable($flatTree, $defaultOrd);
 
 Assert::exception(function() use ($traversal) {
 	$traversal->chooseTarget($id = 4294967295); // that's enough ;-)
-}, 'SakuraRowNotFoundException');
+}, '\Sakura\SakuraRowNotFoundException');
 
 Assert::exception(function() use ($traversal) {
 	$traversal->chooseTarget(0);
-}, 'DomainException');
+}, '\DomainException');
 
-dibi::rollback();
+$dibiConnection->rollback();

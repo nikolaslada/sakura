@@ -6,6 +6,8 @@
 */
 
 use Tester\Assert;
+use Sakura\Table\Table;
+use Sakura\Tree\Tree;
 
 require_once __DIR__ . '/../../tests_config.php';
 require_once __DIR__ . '/../../src/SakuraException.php';
@@ -43,9 +45,9 @@ function printWholeTable($flatTree) {
 $columns = array('id' => 'id', 'parent' => 'parent', 'depth' => 'depth', 'order' => 'order', 'name' => 'name');
 $orderExample2 = 'order_example_2';
 $defaultOrd = array(0 => 'R', 'X', 'G', 'L', 'V', '7', '6', 'J', 'E', 'I', 'C', 'N', 'Q', 'S', '3', 'M', 'B', 'K', '0');
-$order_example = new Table($orderExample2, $columns, $alias = 'o', $enabledTransaction = False);
+$order_example = new Table($dibiConnection, $orderExample2, $columns, $alias = 'o', $enabledTransaction = False);
 
-$order = new Tree($order_example, $driver = 'order');
+$order = new Tree($dibiConnection, $order_example, $driver = 'order');
 
 $selectTreeSQL = $order->selectTreeSqlFactory();
 $selectTreeSQL->select("`$alias`.`name`");
@@ -106,7 +108,7 @@ $numberOfSubnodes = $order->selectNumOfSubnodes();
 Assert::same( $numberOfSubnodes, 18 );
 
 
-dibi::begin();
+$dibiConnection->begin();
 
 
 $order->setId(2);
@@ -201,14 +203,14 @@ checkWholeTable($flatTree, $defaultOrd);
 
 
 
-$rootID = dibi::fetchSingle("SELECT `id` FROM `$orderExample2` WHERE `name` = %s", "A");
+$rootID = $dibiConnection->fetchSingle("SELECT `id` FROM `$orderExample2` WHERE `name` = %s", "A");
 $order->chooseTarget($rootID);
 $order->setId(4);
 
 
 Assert::exception(function() use ($order) {
 	$order->updateBranch();
-}, 'SakuraNotSupportedException');
+}, '\Sakura\SakuraNotSupportedException');
 
 
 
@@ -265,10 +267,10 @@ checkWholeTable($flatTree, $defaultOrd);
 
 Assert::exception(function() use ($order) {
 	$order->chooseTarget($id = 4294967295); // that's enough ;-)
-}, 'SakuraRowNotFoundException');
+}, '\Sakura\SakuraRowNotFoundException');
 
 Assert::exception(function() use ($order) {
 	$order->chooseTarget(0);
-}, 'DomainException');
+}, '\DomainException');
 
-dibi::rollback();
+$dibiConnection->rollback();

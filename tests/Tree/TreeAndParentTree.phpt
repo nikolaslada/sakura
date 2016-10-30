@@ -6,6 +6,9 @@
 */
 
 use Tester\Assert;
+use Sakura\Table\Table;
+use Sakura\Tree\Tree;
+use Sakura\Tree\ParentTree;
 
 require_once __DIR__ . '/../../tests_config.php';
 require_once __DIR__ . '/../../src/SakuraException.php';
@@ -38,9 +41,9 @@ function printWholeTable($flatTree) {
 $columns = array('id' => 'id', 'parent' => 'parent', 'name' => 'name');
 $tableExample2 = 'parent_example_2';
 $defaultOrd = array(0 => 'R', 'X', 'G', 'L', 'V', '7', '6', 'J', 'E', 'I', 'C', 'N', 'Q', 'S', '3', 'M', 'B', 'K', '0');
-$parent_example = new Table($tableExample2, $columns, $alias = 'p', $enabledTransaction = False);
+$tableParentE2 = new Table($dibiConnection, $tableExample2, $columns, $alias = 'p', $enabledTransaction = False);
 
-$parent = new Tree($parent_example, $driver = 'parent');
+$parent = new Tree($dibiConnection, $tableParentE2, $driver = 'parent');
 
 $selectTreeSQL = $parent->selectTreeSqlFactory();
 $selectTreeSQL->select("`$alias`.`parent`");
@@ -103,7 +106,7 @@ $numberOfSubnodes = $parent->selectNumOfSubnodes();
 Assert::same( $numberOfSubnodes, 18 );
 
 
-dibi::begin();
+$dibiConnection->begin();
 
 
 $parent->setId(2);
@@ -192,13 +195,13 @@ checkWholeTable($flatTree, $defaultOrd);
 
 
 
-$rootID = dibi::fetchSingle("SELECT `id` FROM `$tableExample2` WHERE `name` = %s", "A");
+$rootID = $dibiConnection->fetchSingle("SELECT `id` FROM `$tableExample2` WHERE `name` = %s", "A");
 $parent->chooseTarget($rootID);
 $parent->setId(4);
 /*
 Assert::exception(function() use ($parent) {
 	$parent->updateBranch();
-}, 'SakuraNotSupportedException');
+}, '\Sakura\SakuraNotSupportedException');
 */
 
 $parent->chooseTarget(1);
@@ -220,13 +223,13 @@ checkWholeTable($flatTree, $defaultOrd);
 
 Assert::exception(function() use ($parent) {
 	$parent->chooseTarget($id = 4294967295); // that's enough ;-)
-}, 'SakuraRowNotFoundException');
+}, '\Sakura\SakuraRowNotFoundException');
 
 Assert::exception(function() use ($parent) {
 	$parent->chooseTarget(0);
-}, 'DomainException');
+}, '\DomainException');
 
-dibi::rollback();
+$dibiConnection->rollback();
 
 /*
 $traversal_example = new Table($name = 'traversal_example', $columns, $alias = 't', $enabledTransaction = True);
