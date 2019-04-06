@@ -2,21 +2,22 @@
 	"name": "sakuraphp/sakura",
 	"type": "library",
 	"description": "Sakura library contains implementations of 4 methods, which can manage different types of hierarchical structure (tree) on relational database.",
-	"keywords": ["tree", "database", "benchmark", "dibi", "traversal"],
+	"keywords": ["tree", "database", "traversal"],
 	"homepage": "http://sakuraphp.com",
-	"license": ["GPL-2.0", "GPL-3.0"],
+	"license": ["GPL-2.0", "GPL-3.0", "LGPL-3.0"],
 	"authors": [
 		{
 			"name": "Nikolas Lada",
-			"homepage": "http://linuxclan.com"
+			"homepage": "http://www.nikolaslada.cz"
 		}
 	],
 	"require": {
-		"dibi/dibi": "3.*",
-		"nette/tester": "^1.7"
 	},
 	"autoload": {
 		"classmap": ["src/"]
 	},
-	"minimum-stability": "dev"
+	"minimum-stability": "stable",
+	"require-dev": {
+		"phpunit/phpunit": "^8.1"
+	}
 }
