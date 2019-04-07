@@ -8,4 +8,6 @@ interface ITable {
 
     public function getName(): string;
 
+    public function getIdColumn(): string;
+
 }
