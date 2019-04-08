@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sakura;
 
-interface IRepository
+interface ITree
 {
 
     public function getNode(int $id): INode;
@@ -19,7 +19,7 @@ interface IRepository
 
     public function getNumberOfChilds(INode $node): int;
 
-    public function getBranch(INode $node, ?int $maxDepth, ?int $maxItems): IBranch;
+    public function getBranch(INode $node, int $maxDepth): IBranch;
 
     /**
      * @return int Id of a new node.
