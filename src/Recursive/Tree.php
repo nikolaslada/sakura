@@ -29,13 +29,13 @@ final class Tree implements ITree
     public function createNodeAfter(array $data, INode $previousNode): int
     {
         $data[$this->table->getParentColumn()] = $previousNode->getParent();
-        $this->repository->addData($data);
+        return $this->repository->addData($data);
     }
 
     public function createNodeAsFirstChild(array $data, INode $parentNode): int
     {
         $data[$this->table->getParentColumn()] = $parentNode->getId();
-        $this->repository->addData($data);
+        return $this->repository->addData($data);
     }
 
     public function getBranch(INode $node, int $maxDepth): Branch
@@ -108,17 +108,17 @@ final class Tree implements ITree
 
     public function getRoot(): INode
     {
-        return $this->repository->getNodeByParent(\null);
+        return $this->repository->getRoot();
     }
 
     public function moveBranchAfter(INode $branchNode, INode $previousNode): void
     {
-        $this->repository->updateNode($branchNode->getId(), $previousNode->getParent());
+        $this->repository->updateNode($previousNode->getParent(), $branchNode->getId());
     }
 
     public function moveBranchAsFirstChild(INode $branchNode, INode $parent): void
     {
-        $this->repository->updateNode($branchNode->getId(), $parent->getId());
+        $this->repository->updateNode($parent->getId(), $branchNode->getId());
     }
 
     public function removeNode(INode $node): void
@@ -126,7 +126,7 @@ final class Tree implements ITree
         $this->repository->beginTransaction();
         
         $nodeList = $this->repository->getChildsByParent($node->getId());
-        $this->repository->updateNode($nodeList, $node->getParent());
+        $this->repository->updateNode($node->getParent(), $nodeList);
         $this->repository->delete($node->getId());
         
         $this->repository->commitTransaction();
