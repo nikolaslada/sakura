@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sakura\Order;
 
-use Sakura\INode;
-
 final class Node implements INode
 {
 
@@ -20,9 +18,9 @@ final class Node implements INode
     
     
     public function __construct(int $id, int $order, int $parent) {
-      $this->id = $id;
-      $this->order = $order;
-      $this->parent = $parent;
+        $this->id = $id;
+        $this->order = $order;
+        $this->parent = $parent;
     }
 
     public function getId(): int
