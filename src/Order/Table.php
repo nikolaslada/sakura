@@ -15,15 +15,19 @@ final class Table implements ITable {
     private $idColumn;
     
     /** @var string */
+    private $depthColumn;
+    
+    /** @var string */
     private $orderColumn;
     
     /** @var string */
     private $parentColumn;
     
     
-    public function __construct(string $name, string $idColumn, string $orderColumn, string $parentColumn) {
+    public function __construct(string $name, string $idColumn, string $depthColumn, string $orderColumn, string $parentColumn) {
       $this->name = $name;
       $this->idColumn = $idColumn;
+      $this->depthColumn = $depthColumn;
       $this->orderColumn = $orderColumn;
       $this->parentColumn = $parentColumn;
     }
@@ -34,6 +38,10 @@ final class Table implements ITable {
 
     public function getIdColumn(): string {
       return $this->idColumn;
+    }
+
+    public function getDepthColumn(): string {
+      return $this->depthColumn;
     }
 
     public function getOrderColumn(): string {
