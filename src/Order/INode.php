@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sakura\Order;
 
-interface INode extends Sakura\INode
+interface INode
 {
+
+    public function getId(): int;
 
     public function getDepth(): int;
 
