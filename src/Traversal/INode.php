@@ -13,6 +13,6 @@ interface INode
 
     public function getRight(): int;
 
-    public function getParent(): int;
+    public function getParent(): ?int;
 
 }

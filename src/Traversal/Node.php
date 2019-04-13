@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sakura\Traversal;
 
-use Sakura\INode;
 
 final class Node implements INode
 {
@@ -18,11 +17,11 @@ final class Node implements INode
     /** @var int */
     private $right;
     
-    /** @var int */
+    /** @var null|int */
     private $parent;
     
     
-    public function __construct(int $id, int $left, int $right, int $parent)
+    public function __construct(int $id, int $left, int $right, ?int $parent)
     {
         $this->id = $id;
         $this->left = $left;
@@ -45,7 +44,7 @@ final class Node implements INode
         return $this->right;
     }
 
-    public function getParent(): int
+    public function getParent(): ?int
     {
         return $this->parent;
     }

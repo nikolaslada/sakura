@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Sakura\Recursive;
 
-interface INode extends Sakura\INode
+interface INode
 {
 
-    public function getParent(): int;
+    public function getId(): int;
+
+    public function getParent(): ?int;
 
 }

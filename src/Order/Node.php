@@ -16,11 +16,11 @@ final class Node implements INode
     /** @var int */
     private $order;
     
-    /** @var int */
+    /** @var null|int */
     private $parent;
     
     
-    public function __construct(int $id, int $depth, int $order, int $parent) {
+    public function __construct(int $id, int $depth, int $order, ?int $parent) {
         $this->id = $id;
         $this->depth = $depth;
         $this->order = $order;
@@ -41,7 +41,7 @@ final class Node implements INode
         return $this->order;
     }
 
-    public function getParent(): int
+    public function getParent(): ?int
     {
         return $this->parent;
     }

@@ -13,6 +13,6 @@ interface INode
 
     public function getOrder(): int;
 
-    public function getParent(): int;
+    public function getParent(): ?int;
 
 }
