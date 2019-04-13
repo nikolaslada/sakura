@@ -23,7 +23,7 @@ interface IRepository
 
     public function getNumberOfChilds(int $nodeId): int;
 
-    public function updateByIdList(array $whereIdList, int $setParent);
+    public function updateByIdList(array $whereIdList, ?int $setParent);
 
     public function updateByOrder(int $fromOrder, ?int $toOrder, int $orderMovement, int $depthMovement);
 
