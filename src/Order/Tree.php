@@ -62,7 +62,7 @@ final class Tree implements ITree
             throw new \InvalidArgumentException("Node's depth must be lower than maxDepth!");
         }
         
-        $endNode = $this->repository->getEndNode($order, $node->getDepth(), $maxDepth);
+        $endNode = $this->repository->getEndNode($node->getOrder(), $node->getDepth(), $maxDepth);
         $nodeList = $this->repository->getBranch($fromOrder, $endNode->getOrder());
         
         return $branch;
@@ -108,8 +108,40 @@ final class Tree implements ITree
         return $this->repository->getNodeByOrder(1);
     }
 
-    public function moveBranchAfter(INode $branchNode, INode $previousNode): void
+    public function moveBranchAfter(INode $branch, INode $goal): void
     {
+        $endNode = $this->repository->getEndNode($branch->getOrder(), $branch->getDepth(), $maxDepth);
+        
+        if ($branch->getOrder() < $goal->getOrder() && $endNode->getOrder() > $goal->getOrder()) {
+            throw new \InvalidArgumentException("Goal destination can not be in same branch!");
+        }
+        
+        if ($branch->getOrder() === $goal->getOrder()) {
+            throw new \InvalidArgumentException("Goal destination can not be in same branch!");
+        }
+        
+        $this->repository->beginTransaction();
+        
+        if ($branch->getOrder() < $goal->getOrder() && $endNode->getOrder() < $goal->getOrder()) {
+            $this->repository->updateOrderInTree($goal->getOrder(), \null, self::getOrderCount($branch, $end));
+            $this->repository->updateOrderInTree($branch->getOrder(), $endNode->getOrder(), self::getOrderMovement($branch, $goal));
+            $this->repository->updateOrderInTree($branch->getOrder(), \null, self::getOrderCount($branch, $end) * (-1));
+        }
+        
+        if ($branch->getOrder() > $goal->getOrder()) {
+            $orderBranchCount = self::getOrderCount($branch, $end);
+            $this->repository->updateOrderInTree($goal->getOrder(), \null, $orderBranchCount);
+            $this->repository->updateOrderInTree(
+                    $branch->getOrder() + $orderBranchCount,
+                    $endNode->getOrder() + $orderBranchCount,
+                    self::getOrderMovement($goal, $branch) * (-1));
+            $this->repository->updateOrderInTree(
+                    $branch->getOrder(),
+                    \null,
+                    self::getOrderMovement($goal, $branch) * (-1));
+        }
+        
+        $this->repository->commitTransaction();
     }
 
     public function moveBranchAsFirstChild(INode $branchNode, INode $parent): void
@@ -122,10 +154,20 @@ final class Tree implements ITree
         
         $nodeList = $this->repository->getChildsByParent($currentNode->getId());
         $this->repository->updateNode($currentNode->getParent(), $nodeList);
-        $this->repository->updateOrderInTree($currentNode->getOrder(), 1);
+        $this->repository->updateOrderInTree($currentNode->getOrder(), \null, 1);
         $this->repository->delete($currentNode->getId());
         
         $this->repository->commitTransaction();
+    }
+
+    public static function getOrderCount(INode $start, INode $end): int
+    {
+        return $end->getOrder() - $start->getOrder() + 1;
+    }
+
+    public static function getOrderMovement(INode $lower, INode $higher): int
+    {
+        return $higher->getOrder() - $lower->getOrder() + 1;
     }
 
 }
