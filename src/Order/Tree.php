@@ -220,15 +220,15 @@ final class Tree implements ITree
     /**
      * @throws Exceptions\BadArgumentException
      */
-    public function removeNode(INode $currentNode): void
+    public function removeNode(INode $node): void
     {
-        if ($currentNode->getOrder() === 1 || \is_null($currentNode->getParent()) || $currentNode->getDepth() === 0)
+        if ($node->getOrder() === 1 || \is_null($node->getParent()) || $node->getDepth() === 0)
         {
             throw new Exceptions\BadArgumentException("Root node cannot be removed!");
         }
 
         $this->repository->beginTransaction();
-        $nodeList = $this->repository->getNodesByParent($currentNode->getId());
+        $nodeList = $this->repository->getNodesByParent($node->getId());
         $idList = [];
 
         foreach ($nodeList as $node) {
@@ -236,9 +236,9 @@ final class Tree implements ITree
             $idList[] = $node->getId();
         }
 
-        $this->repository->updateByIdList($idList, $currentNode->getParent());
-        $this->repository->updateByOrder($currentNode->getOrder(), \null, 1, -1);
-        $this->repository->delete($currentNode->getId());
+        $this->repository->updateByIdList($idList, $node->getParent());
+        $this->repository->updateByOrder($node->getOrder(), \null, 1, -1);
+        $this->repository->delete($node->getId());
         $this->repository->commitTransaction();
     }
 

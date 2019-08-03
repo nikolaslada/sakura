@@ -11,7 +11,7 @@ interface IRepository
 
     public function getNodeById(int $id): INode;
 
-    public function getNodeByLeft(int $left): INode;
+    public function getNodeByLeft(int $left): ?INode;
 
     public function getNodesByParent(int $parent): NodeList;
 

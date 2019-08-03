@@ -106,9 +106,12 @@ final class Tree implements ITree
         $this->appendIntoList($parentNode, $list);
     }
 
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
     public function getRoot(): INode
     {
-        return $this->repository->getRoot();
+        $this->repository->getRoot();
     }
 
     public function moveBranchAfter(INode $branchNode, INode $previousNode): void
@@ -121,8 +124,16 @@ final class Tree implements ITree
         $this->repository->updateNode($parent->getId(), $branchNode->getId());
     }
 
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
     public function removeNode(INode $node): void
     {
+        if (\is_null($node->getParent()))
+        {
+            throw new Exceptions\BadArgumentException("Root node cannot be removed!");
+        }
+
         $this->repository->beginTransaction();
         
         $nodeList = $this->repository->getChildsByParent($node->getId());

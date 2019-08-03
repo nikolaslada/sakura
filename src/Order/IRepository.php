@@ -9,9 +9,9 @@ interface IRepository
 
     public function addData(array $data): int;
 
-    public function getNodeById(int $id): INode;
+    public function getNodeById(int $id): ?INode;
 
-    public function getNodeByOrder(int $order): INode;
+    public function getNodeByOrder(int $order): ?INode;
 
     public function getEndNode(int $startOrder, int $minDepth): INode;
 

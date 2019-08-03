@@ -19,6 +19,9 @@ interface IRepository
     
     public function getParentNode(int $id): INode;
     
+    /**
+     * @throws Exceptions\NoRootException
+     */
     public function getRoot(): INode;
 
     public function updateNode(int $setParent, int ...$whereId);

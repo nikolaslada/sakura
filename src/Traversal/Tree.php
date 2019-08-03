@@ -84,10 +84,23 @@ final class Tree
     {
         return $this->repository->getPath($node);
     }
-    
+
+    /**
+     * @throws Exceptions\NoRootException
+     */
     public function getRoot(): INode
     {
-        return $this->repository->getNodeByLeft(1);
+        $root = $this->repository->getNodeByLeft(1);
+
+        if (\is_null($root)) {
+            throw new Exceptions\NoRootException('No root found in ' . $this->table->getName() . ' table.');
+        }
+
+        if (!\is_null($root->getParent())) {
+            throw new Exceptions\NoRootException('There is broken root or whole tree in ' . $this->table->getName() . ' table.');
+        }
+
+        return $root;
     }
 
     public function moveBranchAfter(INode $branch, INode $goal): void
@@ -192,8 +205,15 @@ final class Tree
         }
     }
 
-    public function removeNode(INode $currentNode): void
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
+    public function removeNode(INode $node): void
     {
+        if ($node->getLeft() === 1 || \is_null($node->getParent()))
+        {
+            throw new Exceptions\BadArgumentException("Root node cannot be removed!");
+        }
     }
 
     public static function getRightLeftDifference(int $left, int $right): int
