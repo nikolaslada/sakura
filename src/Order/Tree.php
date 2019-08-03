@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Sakura\Order;
 
-final class Tree
+use Sakura\ITree;
+use Sakura\Exceptions;
+
+final class Tree implements ITree
 {
 
     /** @var Table */
@@ -99,9 +102,22 @@ final class Tree
         $this->appendIntoList($parentNode, $list);
     }
     
+    /**
+     * @throws Exceptions\NotRootException
+     */
     public function getRoot(): INode
     {
-        return $this->repository->getNodeByOrder(1);
+        $root = $this->repository->getNodeByOrder(1);
+
+        if (\is_null($root)) {
+            throw new Exceptions\NoRootException('No root found in ' . $this->table->getName() . ' table.');
+        }
+
+        if (!\is_null($root->getParent())) {
+            throw new Exceptions\NoRootException('There is broken root or whole tree in ' . $this->table->getName() . ' table.');
+        }
+
+        return $root;
     }
 
     public function moveBranchAfter(INode $branch, INode $goal): void
@@ -201,8 +217,16 @@ final class Tree
         return $endNode;
     }
 
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
     public function removeNode(INode $currentNode): void
     {
+        if ($currentNode->getOrder() === 1 || \is_null($currentNode->getParent()) || $currentNode->getDepth() === 0)
+        {
+            throw new Exceptions\BadArgumentException("Root node cannot be removed!");
+        }
+
         $this->repository->beginTransaction();
         $nodeList = $this->repository->getNodesByParent($currentNode->getId());
         $idList = [];
