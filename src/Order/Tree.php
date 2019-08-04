@@ -55,10 +55,13 @@ final class Tree implements ITree
         return $newId;
     }
 
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
     public function getBranch(INode $node, ?int $maxDepth): NodeList
     {
         if (!\is_null($maxDepth) && $node->getDepth() >= $maxDepth) {
-            throw new \InvalidArgumentException("Node's depth must be lower than maxDepth!");
+            throw new Exceptions\BadArgumentException("Node's depth must be lower than maxDepth!");
         }
         
         $endNode = $this->repository->getEndNode($node->getOrder(), $node->getDepth());
@@ -120,6 +123,9 @@ final class Tree implements ITree
         return $root;
     }
 
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
     public function moveBranchAfter(INode $branch, INode $goal): void
     {
         $endNode = $this->getEndNode($branch, $goal);
@@ -161,6 +167,9 @@ final class Tree implements ITree
         $this->repository->commitTransaction();
     }
 
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
     public function moveBranchAsFirstChild(INode $branch, INode $goal): void
     {
         $endNode = $this->getEndNode($branch, $goal);
@@ -207,11 +216,11 @@ final class Tree implements ITree
         $endNode = $this->repository->getEndNode($branch->getOrder(), $branch->getDepth());
 
         if ($branch->getOrder() < $goal->getOrder() && $endNode->getOrder() > $goal->getOrder()) {
-            throw new \InvalidArgumentException("Goal destination can not be in same branch!");
+            throw new Exceptions\BadArgumentException("Goal destination can not be in same branch!");
         }
 
         if ($branch->getOrder() === $goal->getOrder()) {
-            throw new \InvalidArgumentException("Goal destination can not be in same branch!");
+            throw new Exceptions\BadArgumentException("Goal destination can not be in same branch!");
         }
 
         return $endNode;

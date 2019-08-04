@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sakura\Traversal;
 
+use Sakura\Exceptions;
+
 final class Tree
 {
 
@@ -103,6 +105,10 @@ final class Tree
         return $root;
     }
 
+    /**
+     * @throws Exceptions\BadArgumentException
+     * @throws Exceptions\RuntimeException
+     */
     public function moveBranchAfter(INode $branch, INode $goal): void
     {
         $this->checkBranchWithGoal($branch, $goal);
@@ -193,7 +199,7 @@ final class Tree
         if (
             ($branchLeft < $goalLeft && $branchRight > $goalRight)
             || ($branchLeft === $goalLeft)) {
-            throw new \InvalidArgumentException("Goal destination can not be in same branch!");
+            throw new Exceptions\BadArgumentException("Goal destination can not be in same branch!");
         }
 
         if (
@@ -201,7 +207,7 @@ final class Tree
             || ($branchLeft < $goalLeft && $branchRight > $goalLeft)
             || ($branchLeft > $goalRight && $branchRight < $goalRight)
             || ($branchLeft < $goalRight && $branchRight > $goalRight)) {
-            throw new \Sakura\Exceptions\RuntimeException("Branch and/or goal nodes seem not valid.");
+            throw new Exceptions\RuntimeException("Branch and/or goal nodes seem not valid.");
         }
     }
 
