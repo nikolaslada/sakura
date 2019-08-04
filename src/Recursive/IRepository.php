@@ -7,18 +7,21 @@ namespace Sakura\Recursive;
 interface IRepository
 {
 
+    /**
+     * @throws Exceptions\RuntimeException
+     */
     public function addData(array $data): int;
 
-    public function getChildsByParent(int $id): array;
+    public function getNodesByParent(int $id): array;
 
-    public function getParentById(int $id): int;
-    
-    public function getNodeById(int $id): INode;
-    
+    public function getParentById(int $id): ?int;
+
+    public function getNodeById(int $id): ?INode;
+
     public function getNumberOfChilds(int $nodeId): int;
-    
-    public function getParentNode(int $id): INode;
-    
+
+    public function getIdsByParent(int $parent): array;
+
     /**
      * @throws Exceptions\NoRootException
      */

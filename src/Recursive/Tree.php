@@ -52,7 +52,7 @@ final class Tree implements ITree
     private function appendIntoBranch(Branch $branch, int $maxDepth): void
     {
         $node = $branch->getNode();
-        $nodeList = $this->repository->getChildsByParent($node->getId());
+        $nodeList = $this->repository->getNodesByParent($node->getId());
         
         foreach ($nodeList as $node)
         {
@@ -68,7 +68,7 @@ final class Tree implements ITree
     public function getDepth(int $nodeId, $depth = 0): int
     {
         $parent = $this->repository->getParentById($nodeId);
-        
+
         if (\is_null($parent)) {
             return $depth;
         } else {
@@ -86,11 +86,14 @@ final class Tree implements ITree
         return $this->repository->getNumberOfChilds($nodeId);
     }
 
-    public function getParent(int $id): INode
+    public function getParent(int $id): ?int
     {
-        return $this->repository->getParentNode($id);
+        return $this->repository->getParentById($id);
     }
 
+    /**
+     * @throws Exceptions\NoExpectedNodeException
+     */
     public function getPath(INode $node): NodeList
     {
         $list = [];
@@ -102,12 +105,21 @@ final class Tree implements ITree
     private function appendIntoList(INode $node, array $list): void
     {
         $list[$node->getId()] = $node;
-        $parentNode = $this->repository->getParentNode($node->getId());
-        $this->appendIntoList($parentNode, $list);
+        $parent = $node->getParent();
+
+        if (\is_int($parent))
+        {
+            $parentNode = $this->repository->getNodeById($parent);
+            if (\is_null($parentNode)) {
+                throw new Exceptions\NoExpectedNodeException('There is broken node or whole tree in ' . $this->table->getName() . ' table.');
+            }
+
+            $this->appendIntoList($parentNode, $list);
+        }
     }
 
     /**
-     * @throws Exceptions\BadArgumentException
+     * @throws Exceptions\NoRootException
      */
     public function getRoot(): INode
     {
@@ -136,8 +148,8 @@ final class Tree implements ITree
 
         $this->repository->beginTransaction();
         
-        $nodeList = $this->repository->getChildsByParent($node->getId());
-        $this->repository->updateNode($node->getParent(), $nodeList);
+        $idList = $this->repository->getIdsByParent($node->getId());
+        $this->repository->updateNode($node->getParent(), $idList);
         $this->repository->delete($node->getId());
         
         $this->repository->commitTransaction();
