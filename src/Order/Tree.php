@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Sakura\Order;
 
-use Sakura\ITree;
 use Sakura\Exceptions;
 
-final class Tree implements ITree
+final class Tree
 {
 
     /** @var Table */

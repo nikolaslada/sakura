@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Sakura\Recursive;
 
-use Sakura\ITree;
-
-final class Tree implements ITree
+final class Tree
 {
 
     /** @var Table */
