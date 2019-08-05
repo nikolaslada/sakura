@@ -13,7 +13,7 @@ interface IRepository
 
     public function getNodeByOrder(int $order): ?INode;
 
-    public function getEndNode(int $startOrder, int $minDepth): INode;
+    public function getEndOrder(int $startOrder, int $startDepth): int;
 
     public function getNodesByParent(int $parent): NodeList;
 
