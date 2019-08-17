@@ -18,7 +18,6 @@
 	},
 	"minimum-stability": "stable",
 	"require-dev": {
-		"phpunit/phpunit": "^8.1",
-		"phpstan/phpstan": "^0.11.5"
+		"phpstan/phpstan-shim": "^0.11.12"
 	}
 }
