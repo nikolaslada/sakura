@@ -23,14 +23,16 @@ interface IRepository
 
     public function getNumberOfChilds(int $nodeId): int;
 
-    public function updateByIdList(array $whereIdList, ?int $setParent);
+    public function updateParentByIdList(array $whereIdList, ?int $setParent);
 
-    public function updateByOrder(int $fromOrder, ?int $toOrder, int $orderMovement, int $depthMovement);
+    public function updateByOrder(int $fromOrder, ?int $toOrder, int $orderMovement, int $depthMovement): int;
 
     public function beginTransaction();
 
     public function commitTransaction();
 
-    public function delete(int $id);
+    public function rollbackTransaction();
+
+    public function delete(int $id): int;
 
 }
