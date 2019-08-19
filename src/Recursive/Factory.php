@@ -7,9 +7,9 @@ namespace Sakura\Recursive;
 final class Factory
 {
 
-    public function createBranch(): Branch
+    public function createBranch(INode $node): Branch
     {
-        return new Branch;
+        return new Branch($node, []);
     }
 
     public function createNodeList(array $list): NodeList
