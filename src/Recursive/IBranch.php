@@ -9,4 +9,6 @@ interface IBranch
 
     public function getRootNode(): INode;
 
+    public function existsNode(int $nodeId): bool;
+
 }
