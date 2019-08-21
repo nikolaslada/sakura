@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sakura\Recursive;
 
+use Sakura\Exceptions;
+
 final class Tree
 {
 
@@ -24,9 +26,16 @@ final class Tree
         $this->factory = $factory;
     }
 
-    public function createNodeAfter(array $data, INode $previousNode): int
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
+    public function createNodeAfter(array $data, INode $previous): int
     {
-        $data[$this->table->getParentColumn()] = $previousNode->getParent();
+        if (self::isRoot($previous)) {
+            throw new Exceptions\BadArgumentException('Cannot create node after root in ' . $this->table->getName() . ' table!');
+        }
+
+        $data[$this->table->getParentColumn()] = $previous->getParent();
         return $this->repository->addData($data);
     }
 
@@ -36,20 +45,23 @@ final class Tree
         return $this->repository->addData($data);
     }
 
-    public function getBranch(INode $node, int $maxDepth): Branch
+    public function getBranch(INode $node, ?int $maxDepth = \null): Branch
     {
-        $branch = $this->factory->createBranch($node);
-        
+        if (\is_null($maxDepth)) {
+            $maxDepth = PHP_INT_MAX;
+        }
+
         if ($maxDepth > 0) {
+            $branch = $this->factory->createBranch($node);
             $this->appendIntoBranch($branch, --$maxDepth);
         }
-        
+
         return $branch;
     }
 
     private function appendIntoBranch(Branch $branch, int $maxDepth): void
     {
-        $node = $branch->getNode();
+        $node = $branch->getRootNode();
         $nodeList = $this->repository->getNodesByParent($node->getId());
         
         foreach ($nodeList as $node)
@@ -74,7 +86,7 @@ final class Tree
         }
     }
 
-    public function getNode(int $id): INode
+    public function getNode(int $id): ?INode
     {
         return $this->repository->getNodeById($id);
     }
@@ -92,15 +104,19 @@ final class Tree
     /**
      * @throws Exceptions\NoExpectedNodeException
      */
-    public function getPath(INode $node): NodeList
+    public function getPath(INode $node, bool $isAscending = true): NodeList
     {
-        $list = [];
-        $this->appendIntoList($node, $list);
-        \krsort($list);
-        return $this->factory->createNodeList($list);
+        $list = $this->appendIntoList($node, []);
+        
+        if ($isAscending) {
+            $reversed = \array_reverse($list, true);
+            return $this->factory->createNodeList($reversed);
+        } else {
+            return $this->factory->createNodeList($list);
+        }
     }
     
-    private function appendIntoList(INode $node, array $list): void
+    private function appendIntoList(INode $node, array $list): array
     {
         $list[$node->getId()] = $node;
         $parent = $node->getParent();
@@ -112,8 +128,10 @@ final class Tree
                 throw new Exceptions\NoExpectedNodeException('There is broken node or whole tree in ' . $this->table->getName() . ' table.');
             }
 
-            $this->appendIntoList($parentNode, $list);
+            return $this->appendIntoList($parentNode, $list);
         }
+
+        return $list;
     }
 
     /**
@@ -121,17 +139,44 @@ final class Tree
      */
     public function getRoot(): INode
     {
-        $this->repository->getRoot();
+        return $this->repository->getRoot();
     }
 
-    public function moveBranchAfter(INode $branchNode, INode $previousNode): void
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
+    public function moveBranchAfter(INode $branch, INode $goal): void
     {
-        $this->repository->updateNode($previousNode->getParent(), $branchNode->getId());
+        if (self::isRoot($branch) || self::isRoot($goal))
+        {
+            throw new Exceptions\BadArgumentException("The whole tree cannot be moved and branch cannot be moved after root node!");
+        }
+
+        self::checkCrossing($branch, $goal);
+        $this->repository->updateParentByIdList([$branch->getId()], $goal->getParent());
     }
 
-    public function moveBranchAsFirstChild(INode $branchNode, INode $parent): void
+    /**
+     * @throws Exceptions\BadArgumentException
+     */
+    public function moveBranchAsChild(INode $branch, INode $goal): void
     {
-        $this->repository->updateNode($parent->getId(), $branchNode->getId());
+        if (self::isRoot($branch))
+        {
+            throw new Exceptions\BadArgumentException("The whole tree cannot be moved!");
+        }
+
+        self::checkCrossing($branch, $goal);
+        $this->repository->updateParentByIdList([$branch->getId()], $goal->getId());
+    }
+
+    private static function checkCrossing(INode $branch, INode $goal): void
+    {
+        $branchBranch = $this->getBranch($branch);
+
+        if ($branchBranch->existsNode($goal->getId())) {
+            throw new Exceptions\BadArgumentException("Goal destination cannot be in same branch!");
+        }
     }
 
     /**
@@ -147,10 +192,15 @@ final class Tree
         $this->repository->beginTransaction();
         
         $idList = $this->repository->getIdsByParent($node->getId());
-        $this->repository->updateNode($node->getParent(), $idList);
+        $this->repository->updateParentByIdList($idList, $node->getParent());
         $this->repository->delete($node->getId());
         
         $this->repository->commitTransaction();
+    }
+
+    public static function isRoot(INode $node): bool
+    {
+        return \is_null($node->getParent());
     }
 
 }
