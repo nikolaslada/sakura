@@ -27,12 +27,12 @@ interface IRepository
      */
     public function getRoot(): INode;
 
-    public function updateNode(int $setParent, int ...$whereId);
+    public function updateParentByIdList(array $whereIdList, ?int $setParent): int;
 
-    public function beginTransaction();
+    public function beginTransaction(): void;
 
-    public function commitTransaction();
+    public function commitTransaction(): void;
 
-    public function delete(int $id);
+    public function delete(int $id): void;
 
 }
