@@ -152,7 +152,7 @@ final class Tree
             throw new Exceptions\BadArgumentException("The whole tree cannot be moved and branch cannot be moved after root node!");
         }
 
-        self::checkCrossing($branch, $goal);
+        $this->checkCrossing($branch, $goal);
         $this->repository->updateParentByIdList([$branch->getId()], $goal->getParent());
     }
 
@@ -166,11 +166,11 @@ final class Tree
             throw new Exceptions\BadArgumentException("The whole tree cannot be moved!");
         }
 
-        self::checkCrossing($branch, $goal);
+        $this->checkCrossing($branch, $goal);
         $this->repository->updateParentByIdList([$branch->getId()], $goal->getId());
     }
 
-    private static function checkCrossing(INode $branch, INode $goal): void
+    private function checkCrossing(INode $branch, INode $goal): void
     {
         $branchBranch = $this->getBranch($branch);
 
