@@ -13,7 +13,7 @@ interface IRepository
 
     public function getNodeByLeft(int $left): ?INode;
 
-    public function getNodesByParent(int $parent): NodeList;
+    public function getNodeListByParent(int $parent): NodeList;
 
     public function getLevel(INode $node): ?int;
 

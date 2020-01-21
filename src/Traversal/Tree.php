@@ -69,6 +69,11 @@ final class Tree
         return $this->repository->getBranch($node);
     }
 
+    public function getNodeListByParent(int $parent): NodeList
+    {
+        return $this->repository->getNodeListByParent($parent);
+    }
+
     public function getDepth(INode $node): int
     {
         $level = $this->repository->getLevel($node);
