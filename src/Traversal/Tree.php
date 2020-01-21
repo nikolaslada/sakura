@@ -28,13 +28,19 @@ final class Tree
 
     public function createNodeAfter(array $data, INode $previousNode): int
     {
+        if (self::isRoot($previousNode)) {
+            throw new Exceptions\BadArgumentException('Cannot create node after root in ' . $this->table->getName() . ' table!');
+        }
+        
         $newLeft = $previousNode->getRight() + 1;
+        $newRight = $newLeft + 1;
         $data[$this->table->getLeftColumn()] = $newLeft;
-        $data[$this->table->getRightColumn()] = $newLeft + 1;
+        $data[$this->table->getRightColumn()] = $newRight;
         $data[$this->table->getParentColumn()] = $previousNode->getParent();
 
         $this->repository->beginTransaction();
-        $this->repository->updateByLeftRight($newLeft, \null, $newLeft, \null, 2, 2);
+        $this->repository->updateByRight($newLeft, \null, 2);
+        $this->repository->updateByLeft($newLeft, \null, 2);
         $newId = $this->repository->addData($data);
         $this->repository->commitTransaction();
         
@@ -44,12 +50,14 @@ final class Tree
     public function createNodeAsFirstChild(array $data, INode $parentNode): int
     {
         $newLeft = $parentNode->getLeft() + 1;
+        $newRight = $newLeft + 1;
         $data[$this->table->getLeftColumn()] = $newLeft;
-        $data[$this->table->getRightColumn()] = $newLeft + 1;
+        $data[$this->table->getRightColumn()] = $newRight;
         $data[$this->table->getParentColumn()] = $parentNode->getId();
         
         $this->repository->beginTransaction();
-        $this->repository->updateByLeftRight($newLeft, \null, $newLeft, \null, 2, 2);
+        $this->repository->updateByRight($newLeft, \null, 2);
+        $this->repository->updateByLeft($newLeft, \null, 2);
         $newId = $this->repository->addData($data);
         $this->repository->commitTransaction();
         
@@ -58,23 +66,23 @@ final class Tree
 
     public function getBranch(INode $node): NodeList
     {
-        return $this->repository->getBranch($node->getLeft(), $node->getRight());
+        return $this->repository->getBranch($node);
     }
 
     public function getDepth(INode $node): int
     {
-        $nodeList = $this->repository->getPath($node);
-        return \count($nodeList);
+        $level = $this->repository->getLevel($node);
+        return $level - 1;
     }
 
-    public function getNode(int $id): INode
+    public function getNode(int $id): ?INode
     {
         return $this->repository->getNodeById($id);
     }
 
-    public function getNumberOfChilds(int $nodeId): int
+    public function getNumberOfChilds(int $id): int
     {
-        return $this->repository->getNumberOfChilds($nodeId);
+        return $this->repository->getNumberOfChilds($id);
     }
 
     public function getParent(int $id): INode
@@ -82,9 +90,9 @@ final class Tree
         return $this->repository->getNodeById($id);
     }
 
-    public function getPath(INode $node): NodeList
+    public function getPath(INode $node, bool $isAscending = true): NodeList
     {
-        return $this->repository->getPath($node);
+        return $this->repository->getPath($node, $isAscending);
     }
 
     /**
@@ -111,66 +119,73 @@ final class Tree
      */
     public function moveBranchAfter(INode $branch, INode $goal): void
     {
+        if (self::isRoot($branch) || self::isRoot($goal))
+        {
+            throw new Exceptions\BadArgumentException("The whole tree cannot be moved or choosen node cannot be moved after root!");
+        }
+
         $this->checkBranchWithGoal($branch, $goal);
         $leftRightDiff = self::getRightLeftDifference($branch->getLeft(), $branch->getRight());
 
         if ($branch->getLeft() < $goal->getLeft() && $branch->getRight() < $goal->getRight()) {
             $this->repository->beginTransaction();
             $newLeft = $goal->getRight() + 1;
-            $move = self::getMovement($goal->getLeft(), $branch->getLeft());
-            $this->repository->updateByLeftRight(
-                $newLeft,
-                \null,
-                $newLeft,
-                \null,
-                $leftRightDiff,
-                $leftRightDiff);
-            $this->repository->updateByLeftRight(
-                $branch->getLeft(),
-                $branch->getRight(),
-                $branch->getLeft(),
-                $branch->getRight(),
-                $move,
-                $move);
-            $this->repository->updateByLeftRight(
-                $branch->getLeft(),
-                \null,
-                $branch->getRight(),
-                \null,
-                $leftRightDiff * (-1),
-                $leftRightDiff * (-1));
+            $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
+            $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
+
+            $move = $newLeft - $branch->getLeft();
+            $this->repository->updateByLeft($branch->getLeft(), $branch->getRight(), $move);
+            $this->repository->updateByRight($branch->getLeft(), $branch->getRight(), $move);
+            $this->repository->updateByLeft($branch->getLeft(), \null, $leftRightDiff * (-1));
+            $this->repository->updateByRight($branch->getRight(), \null, $leftRightDiff * (-1));
+            $this->repository->updateById($branch->getId(), $goal->getParent());
             $this->repository->commitTransaction();
             return;
         }
 
-        if ($branch->getLeft() > $goal->getLeft() && $branch->getRight() > $goal->getRight()) {
+        if ($goal->getLeft() < $branch->getLeft() && $goal->getRight() < $branch->getRight()) {
             $this->repository->beginTransaction();
             $newLeft = $goal->getRight() + 1;
-            $this->repository->updateByLeftRight(
-                $newLeft,
-                \null,
-                $newLeft,
-                \null,
-                $leftRightDiff,
-                $leftRightDiff);
+            $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
+            $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
 
             $movedLeft = $branch->getLeft() + $leftRightDiff;
             $movedRight = $branch->getRight() + $leftRightDiff;
-            $move = self::getMovement($movedLeft, $goal->getLeft()) * (-1);
-            $this->repository->updateByLeftRight(
-                $movedLeft,
-                $movedRight,
-                $movedLeft,
-                $movedRight,
-                $move,
-                $move);
-            $this->repository->updateByLeftRight(
+            $move = ($movedLeft - $newLeft) * (-1);
+            $this->repository->updateByLeft($movedLeft, $movedRight, $move);
+            $this->repository->updateByRight($movedLeft, $movedRight, $move);
+            $this->repository->updateByLeft(
                 $movedLeft,
                 \null,
-                $movedRight,
-                \null,
-                $leftRightDiff * (-1),
                 $leftRightDiff * (-1));
+            $this->repository->updateByRight(
+                $movedLeft,
+                \null,
+                $leftRightDiff * (-1));
+            $this->repository->updateById($branch->getId(), $goal->getParent());
+            $this->repository->commitTransaction();
+            return;
+        }
+        
+        if ($goal->getLeft() < $branch->getLeft() && $branch->getRight() < $goal->getRight()) {
+            $this->repository->beginTransaction();
+            $newLeft = $goal->getRight() + 1;
+            $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
+            $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
+
+            $move = self::getMovement($newLeft, $branch->getLeft());
+            $move = $newLeft - $branch->getLeft();
+            $this->repository->updateByLeft($branch->getLeft(), $branch->getRight(), $move);
+            $this->repository->updateByRight($branch->getLeft(), $branch->getRight(), $move);            
+            $this->repository->updateByLeft(
+                $branch->getRight() + 1,
+                \null,
+                $leftRightDiff * (-1));
+            $this->repository->updateByRight(
+                $branch->getRight() + 1,
+                \null,
+                $leftRightDiff * (-1));
+            $this->repository->updateById($branch->getId(), $goal->getParent());
             $this->repository->commitTransaction();
             return;
         }
@@ -187,6 +202,85 @@ final class Tree
 
     public function moveBranchAsFirstChild(INode $branch, INode $goal): void
     {
+        if (self::isRoot($branch))
+        {
+            throw new Exceptions\BadArgumentException("The whole tree cannot be moved!");
+        }
+
+        $this->checkBranchWithGoal($branch, $goal);
+        $leftRightDiff = self::getRightLeftDifference($branch->getLeft(), $branch->getRight());
+
+        if ($branch->getLeft() < $goal->getLeft() && $branch->getRight() < $goal->getRight()) {
+            $this->repository->beginTransaction();
+            $newLeft = $goal->getRight() + 1;
+            $move = self::getMovement($goal->getLeft(), $branch->getLeft());
+            $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
+            $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
+            $this->repository->updateByLeft($branch->getLeft(), $branch->getRight(), $move);
+            $this->repository->updateByRight($branch->getLeft(), $branch->getRight(), $move);
+            $this->repository->updateByLeft($branch->getLeft(), \null, $leftRightDiff * (-1));
+            $this->repository->updateByRight($branch->getRight(), \null, $leftRightDiff * (-1));
+            $this->repository->updateById($branch->getId(), $goal->getId());
+            $this->repository->commitTransaction();
+            return;
+        }
+
+        if ($goal->getLeft() < $branch->getLeft() && $goal->getRight() < $branch->getRight()) {
+            $this->repository->beginTransaction();
+            $newLeft = $goal->getLeft() + 1;
+            $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
+            $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
+
+            $movedLeft = $branch->getLeft() + $leftRightDiff;
+            $movedRight = $branch->getRight() + $leftRightDiff;
+            $move = ($movedLeft - $newLeft) * (-1);
+            $this->repository->updateByLeft($movedLeft, $movedRight, $move);
+            $this->repository->updateByRight($movedLeft, $movedRight, $move);
+            $this->repository->updateByLeft(
+                $movedLeft,
+                \null,
+                $leftRightDiff * (-1));
+            $this->repository->updateByRight(
+                $movedLeft,
+                \null,
+                $leftRightDiff * (-1));
+            $this->repository->updateById($branch->getId(), $goal->getId());
+            $this->repository->commitTransaction();
+            return;
+        }
+
+        if ($branch->getLeft() < $goal->getLeft() && $branch->getRight() > $goal->getRight()) {
+            $this->repository->beginTransaction();
+
+            $this->repository->commitTransaction();
+            return;
+        }
+        
+        if ($goal->getLeft() < $branch->getLeft() && $branch->getRight() < $goal->getRight()) {
+            $this->repository->beginTransaction();
+            $newLeft = $goal->getLeft() + 1;
+            $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
+            $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
+
+            $movedLeft = $branch->getLeft() + $leftRightDiff;
+            $movedRight = $branch->getRight() + $leftRightDiff;
+            $move = ($movedLeft - $newLeft) * (-1);
+            $this->repository->updateByLeft($movedLeft, $movedRight, $move);
+            $this->repository->updateByRight($movedLeft, $movedRight, $move);
+            $this->repository->updateByLeft(
+                $movedLeft,
+                \null,
+                $leftRightDiff * (-1));
+            $this->repository->updateByRight(
+                $movedLeft,
+                \null,
+                $leftRightDiff * (-1));
+            $this->repository->updateById($branch->getId(), $goal->getId());
+            $this->repository->commitTransaction();
+            return;
+        }
+
+        throw new \Sakura\Exceptions\RuntimeException;
     }
 
     private function checkBranchWithGoal(INode $branch, INode $goal): void
@@ -216,10 +310,19 @@ final class Tree
      */
     public function removeNode(INode $node): void
     {
-        if ($node->getLeft() === 1 || \is_null($node->getParent()))
+        if (self::isRoot($node))
         {
             throw new Exceptions\BadArgumentException("Root node cannot be removed!");
         }
+        
+        $this->repository->beginTransaction();
+        $this->repository->delete($node->getId());
+        $this->repository->updateByParent($node->getId(), $node->getParent());
+        $this->repository->updateByLeft($node->getLeft(), $node->getRight(), -1);
+        $this->repository->updateByRight($node->getLeft(), $node->getRight(), -1);
+        $this->repository->updateByLeft($node->getRight(), \null, -2);
+        $this->repository->updateByRight($node->getRight(), \null, -2);
+        $this->repository->commitTransaction();
     }
 
     public static function getRightLeftDifference(int $left, int $right): int
@@ -230,6 +333,11 @@ final class Tree
     public static function getMovement(int $higher, int $lower): int
     {
         return $higher - $lower + 1;
+    }
+
+    public static function isRoot(INode $node): bool
+    {
+        return $node->getLeft() === 1 || \is_null($node->getParent());
     }
 
 }
