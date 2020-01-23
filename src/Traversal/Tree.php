@@ -96,11 +96,6 @@ final class Tree
         return $this->repository->getNumberOfChilds($id);
     }
 
-    public function getParent(int $id): INode
-    {
-        return $this->repository->getNodeById($id);
-    }
-
     public function getPath(INode $node, bool $isAscending = true): NodeList
     {
         return $this->repository->getPath($node, $isAscending);
