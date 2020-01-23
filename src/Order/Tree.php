@@ -93,11 +93,6 @@ final class Tree
         return $this->repository->getNumberOfChilds($nodeId);
     }
 
-    public function getParent(int $id): ?int
-    {
-        return $this->repository->getNodeById($id);
-    }
-
     /**
      * @throws Exceptions\NoExpectedNodeException
      */
