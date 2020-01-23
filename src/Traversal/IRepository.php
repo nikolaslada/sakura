@@ -15,8 +15,6 @@ interface IRepository
 
     public function getNodeListByParent(int $parent): NodeList;
 
-    public function getLevel(INode $node): ?int;
-
     public function getBranch(INode $node): NodeList;
 
     public function getPath(INode $node, bool $isAscending): NodeList;
