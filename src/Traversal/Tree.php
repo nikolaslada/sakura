@@ -131,12 +131,14 @@ final class Tree
 
         $this->checkCurrenthWithGoal($current, $goal);
         $leftRightDiff = self::getRightLeftDifference($current->getLeft(), $current->getRight());
+        $diffBack = $leftRightDiff * (-1);
 
         /**
          * Current before goal
          */
         if ($current->getRight() < $goal->getLeft()) {
             $this->repository->beginTransaction();
+            
             $newLeft = $goal->getRight() + 1;
             $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
             $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
@@ -144,18 +146,20 @@ final class Tree
             $move = $newLeft - $current->getLeft();
             $this->repository->updateByLeft($current->getLeft(), $current->getRight(), $move);
             $this->repository->updateByRight($current->getLeft(), $current->getRight(), $move);
-            $this->repository->updateByLeft($current->getLeft(), \null, $leftRightDiff * (-1));
-            $this->repository->updateByRight($current->getRight(), \null, $leftRightDiff * (-1));
+            
+            $this->repository->updateByLeft($current->getLeft(), \null, $diffBack);
+            $this->repository->updateByRight($current->getRight(), \null, $diffBack);
+            
             $this->repository->updateById($current->getId(), $goal->getParent());
             $this->repository->commitTransaction();
-            return;
         }
 
         /**
          * Goal before current
          */
-        if ($goal->getRight() < $current->getLeft()) {
+        elseif ($goal->getRight() < $current->getLeft()) {
             $this->repository->beginTransaction();
+            
             $newLeft = $goal->getRight() + 1;
             $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
             $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
@@ -165,46 +169,39 @@ final class Tree
             $move = ($movedLeft - $newLeft) * (-1);
             $this->repository->updateByLeft($movedLeft, $movedRight, $move);
             $this->repository->updateByRight($movedLeft, $movedRight, $move);
-            $this->repository->updateByLeft(
-                $movedLeft,
-                \null,
-                $leftRightDiff * (-1));
-            $this->repository->updateByRight(
-                $movedLeft,
-                \null,
-                $leftRightDiff * (-1));
+            
+            $this->repository->updateByLeft($movedLeft, \null, $diffBack);
+            $this->repository->updateByRight($movedLeft, \null, $diffBack);
+            
             $this->repository->updateById($current->getId(), $goal->getParent());
             $this->repository->commitTransaction();
-            return;
         }
         
         /**
          * Current inside/under goal
          */
-        if ($goal->getLeft() < $current->getLeft() && $current->getRight() < $goal->getRight()) {
+        elseif ($goal->getLeft() < $current->getLeft() && $current->getRight() < $goal->getRight()) {
             $this->repository->beginTransaction();
+            
             $newLeft = $goal->getRight() + 1;
             $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
             $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
 
-            $move = self::getMovement($newLeft, $current->getLeft());
             $move = $newLeft - $current->getLeft();
             $this->repository->updateByLeft($current->getLeft(), $current->getRight(), $move);
-            $this->repository->updateByRight($current->getLeft(), $current->getRight(), $move);            
-            $this->repository->updateByLeft(
-                $current->getRight() + 1,
-                \null,
-                $leftRightDiff * (-1));
-            $this->repository->updateByRight(
-                $current->getRight() + 1,
-                \null,
-                $leftRightDiff * (-1));
+            $this->repository->updateByRight($current->getLeft(), $current->getRight(), $move);
+            
+            $afterCurrent = $current->getRight() + 1;
+            $this->repository->updateByLeft($afterCurrent, \null, $diffBack);
+            $this->repository->updateByRight($afterCurrent, \null, $diffBack);
+            
             $this->repository->updateById($current->getId(), $goal->getParent());
             $this->repository->commitTransaction();
-            return;
         }
 
-        throw new \Sakura\Exceptions\RuntimeException;
+        else {
+            throw new \Sakura\Exceptions\RuntimeException;
+        }
     }
 
     /**
@@ -220,30 +217,35 @@ final class Tree
 
         $this->checkCurrenthWithGoal($current, $goal);
         $leftRightDiff = self::getRightLeftDifference($current->getLeft(), $current->getRight());
+        $diffBack = $leftRightDiff * (-1);
 
         /**
          * Current before goal
          */
         if ($current->getRight() < $goal->getLeft()) {
             $this->repository->beginTransaction();
+            
             $newLeft = $goal->getLeft() + 1;
-            $move = self::getMovement($goal->getLeft(), $current->getLeft());
             $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
             $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
+            
+            $move = self::getMovement($goal->getLeft(), $current->getLeft());
             $this->repository->updateByLeft($current->getLeft(), $current->getRight(), $move);
             $this->repository->updateByRight($current->getLeft(), $current->getRight(), $move);
-            $this->repository->updateByLeft($current->getLeft(), \null, $leftRightDiff * (-1));
-            $this->repository->updateByRight($current->getRight(), \null, $leftRightDiff * (-1));
+            
+            $this->repository->updateByLeft($current->getLeft(), \null, $diffBack);
+            $this->repository->updateByRight($current->getRight(), \null, $diffBack);
+            
             $this->repository->updateById($current->getId(), $goal->getId());
             $this->repository->commitTransaction();
-            return;
         }
 
         /**
          * Current after goal
          */
-        if ($goal->getRight() < $current->getLeft()) {
+        elseif ($goal->getRight() < $current->getLeft()) {
             $this->repository->beginTransaction();
+            
             $newLeft = $goal->getLeft() + 1;
             $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
             $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
@@ -253,24 +255,20 @@ final class Tree
             $move = ($movedLeft - $newLeft) * (-1);
             $this->repository->updateByLeft($movedLeft, $movedRight, $move);
             $this->repository->updateByRight($movedLeft, $movedRight, $move);
-            $this->repository->updateByLeft(
-                $movedLeft,
-                \null,
-                $leftRightDiff * (-1));
-            $this->repository->updateByRight(
-                $movedLeft,
-                \null,
-                $leftRightDiff * (-1));
+            
+            $this->repository->updateByLeft($movedLeft, \null, $diffBack);
+            $this->repository->updateByRight($movedLeft, \null, $diffBack);
+            
             $this->repository->updateById($current->getId(), $goal->getId());
             $this->repository->commitTransaction();
-            return;
         }
 
         /**
          * Current inside/under goal
          */
-        if ($goal->getLeft() < $current->getLeft() && $current->getRight() < $goal->getRight()) {
+        elseif ($goal->getLeft() < $current->getLeft() && $current->getRight() < $goal->getRight()) {
             $this->repository->beginTransaction();
+            
             $newLeft = $goal->getLeft() + 1;
             $this->repository->updateByLeft($newLeft, \null, $leftRightDiff);
             $this->repository->updateByRight($newLeft, \null, $leftRightDiff);
@@ -280,20 +278,17 @@ final class Tree
             $move = ($movedLeft - $newLeft) * (-1);
             $this->repository->updateByLeft($movedLeft, $movedRight, $move);
             $this->repository->updateByRight($movedLeft, $movedRight, $move);
-            $this->repository->updateByLeft(
-                $movedLeft,
-                \null,
-                $leftRightDiff * (-1));
-            $this->repository->updateByRight(
-                $movedLeft,
-                \null,
-                $leftRightDiff * (-1));
+            
+            $this->repository->updateByLeft($movedLeft, \null, $diffBack);
+            $this->repository->updateByRight($movedLeft, \null, $diffBack);
+            
             $this->repository->updateById($current->getId(), $goal->getId());
             $this->repository->commitTransaction();
-            return;
         }
 
-        throw new \Sakura\Exceptions\RuntimeException;
+        else {
+            throw new \Sakura\Exceptions\RuntimeException;
+        }
     }
 
     private function checkCurrenthWithGoal(INode $current, INode $goal): void
