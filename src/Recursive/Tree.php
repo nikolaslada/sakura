@@ -123,16 +123,20 @@ final class Tree
     private function appendIntoList(INode $node, array $list, int $maxCount): array
     {
         $list[$node->getId()] = $node;
-        $parent = $node->getParent();
-
-        if (\is_int($parent))
+        
+        if ($maxCount)
         {
-            $parentNode = $this->repository->getNodeById($parent);
-            if (\is_null($parentNode)) {
-                throw new Exceptions\NoExpectedNodeException('There is broken node or whole tree in ' . $this->table->getName() . ' table.');
-            }
+            $parent = $node->getParent();
 
-            return $this->appendIntoList($parentNode, $list, --$maxCount);
+            if (\is_int($parent))
+            {
+                $parentNode = $this->repository->getNodeById($parent);
+                if (\is_null($parentNode)) {
+                    throw new Exceptions\NoExpectedNodeException('There is broken node or whole tree in ' . $this->table->getName() . ' table.');
+                }
+
+                return $this->appendIntoList($parentNode, $list, --$maxCount);
+            }
         }
 
         return $list;
