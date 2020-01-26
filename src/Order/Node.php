@@ -1,4 +1,8 @@
 <?php
+/**
+ * This file is a part of the Sakura project <https://linuxclan.com/sakura-php>.
+ * Copyright (c) 2015 - 2020 Nikolas Lada <https://nikolaslada.cz>.
+ */
 
 declare(strict_types=1);
 
@@ -20,7 +24,8 @@ final class Node implements INode
     private $parent;
     
     
-    public function __construct(int $id, int $depth, int $order, ?int $parent) {
+    public function __construct(int $id, int $depth, int $order, ?int $parent)
+    {
         $this->id = $id;
         $this->depth = $depth;
         $this->order = $order;
@@ -32,7 +37,8 @@ final class Node implements INode
         return $this->id;
     }
 
-    public function getDepth(): int {
+    public function getDepth(): int
+    {
       return $this->depth;
     }
 
