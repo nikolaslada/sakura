@@ -20,6 +20,5 @@
 	},
 	"minimum-stability": "stable",
 	"require-dev": {
-		"phpstan/phpstan-shim": "^0.11.12"
 	}
 }
