@@ -77,6 +77,11 @@ final class Tree
         
         return $nodeList;
     }
+    
+    public function getNodeListByParent(int $parent): NodeList
+    {
+        return $this->repository->getNodeListByParent($parent);
+    }
 
     public function getDepth(int $nodeId): int
     {
@@ -146,143 +151,208 @@ final class Tree
 
     /**
      * @throws Exceptions\BadArgumentException
+     * @throws Exceptions\RuntimeException
      */
-    public function moveBranchAfter(INode $branch, INode $goal): void
+    public function moveBranchAfter(INode $current, INode $goal): void
     {
-        if (self::isRoot($branch) || self::isRoot($goal))
+        if (self::isRoot($current) || self::isRoot($goal))
         {
-            throw new Exceptions\BadArgumentException("The whole tree cannot be moved and branch cannot be moved after root node!");
+            throw new Exceptions\BadArgumentException("The whole tree cannot be moved and current cannot be moved after root node!");
         }
 
-        $branchStart = $branch->getOrder();
-        $branchEnd = $this->repository->getEndOrder($branchStart, $branch->getDepth());
+        $currentStart = $current->getOrder();
+        $currentEnd = $this->repository->getEndOrder($currentStart, $current->getDepth());
         $goalStart = $goal->getOrder();
         $goalEnd = $this->repository->getEndOrder($goalStart, $goal->getDepth());
-        self::checkCrossing($branchStart, $branchEnd, $goalStart, $goalEnd);
+        self::checkCrossing($currentStart, $currentEnd, $goalStart, $goalEnd);
 
-        $this->repository->beginTransaction();
-
-        if ($branchEnd < $goalStart) {
-            $this->repository->updateParentByIdList([$branch->getId()], $goal->getParent());
-            $branchCount = self::getBranchCount($branchStart, $branchEnd);
+        /**
+         * Current before goal
+         */
+        if ($currentEnd < $goalStart)
+        {
+            $this->repository->beginTransaction();
+            $this->repository->updateParentByIdList([$current->getId()], $goal->getParent());
+            $currentCount = self::getBranchCount($currentStart, $currentEnd);
 
             $this->repository->updateByOrder(
                 $goalEnd + 1,
                 \null,
-                $branchCount,
+                $currentCount,
                 0);
 
             $this->repository->updateByOrder(
-                $branchStart,
-                $branchEnd,
-                self::getOrderMovement($goalEnd, $branchStart, 1),
-                self::getDepthMovement($branch->getDepth(), $goal->getDepth(), false));
+                $currentStart,
+                $currentEnd,
+                self::getOrderMovement($goalEnd, $currentStart, 1),
+                self::getDepthMovement($current->getDepth(), $goal->getDepth(), false));
 
             $this->repository->updateByOrder(
-                $branchEnd + 1,
+                $currentEnd + 1,
                 \null,
-                $branchCount * (-1),
+                $currentCount * (-1),
                 0);
+
+            $this->repository->commitTransaction();
+        }
+        
+        /**
+         * Goal before current
+         */
+        elseif ($goalEnd < $currentStart)
+        {
+            $this->repository->beginTransaction();
+            $this->repository->updateParentByIdList([$current->getId()], $goal->getParent());
+            $currentCount = self::getBranchCount($currentStart, $currentEnd);
+
+            $this->repository->updateByOrder(
+                $currentEnd + 1,
+                \null,
+                $currentCount,
+                0);
+
+            $this->repository->updateByOrder(
+                $currentStart,
+                $currentEnd,
+                self::getOrderMovement($goalEnd, $currentStart, 1),
+                self::getDepthMovement($current->getDepth(), $goal->getDepth(), false));
+
+            $this->repository->updateByOrder(
+                $currentEnd + 1,
+                \null,
+                $currentCount * (-1),
+                0);
+
+            $this->repository->commitTransaction();
         }
 
-        if ($goalStart < $branchStart && $branchEnd <= $goalEnd) {
-            $this->repository->updateParentByIdList([$branch->getId()], $goal->getParent());
+        /**
+         * Current inside goal
+         */
+        elseif ($goalStart < $currentStart && $currentEnd <= $goalEnd)
+        {
+            $this->repository->beginTransaction();
+            $this->repository->updateParentByIdList([$current->getId()], $goal->getParent());
 
-            if ($branchEnd === $goalEnd) {
+            if ($currentEnd === $goalEnd) {
                 $this->repository->updateByOrder(
-                    $branchStart,
-                    $branchEnd,
+                    $currentStart,
+                    $currentEnd,
                     0,
-                    self::getDepthMovement($branch->getDepth(), $goal->getDepth(), false));
+                    self::getDepthMovement($current->getDepth(), $goal->getDepth(), false));
             } else {
-                $branchCount = self::getBranchCount($branchStart, $branchEnd);
-                $this->repository->updateByOrder($goalEnd + 1, \null, $branchCount, 0);
+                $currentCount = self::getBranchCount($currentStart, $currentEnd);
+                $this->repository->updateByOrder($goalEnd + 1, \null, $currentCount, 0);
 
                 $this->repository->updateByOrder(
-                    $branchStart,
-                    $branchEnd,
-                    self::getOrderMovement($goalEnd, $branchStart, $branchCount),
-                    self::getDepthMovement($branch->getDepth(), $goal->getDepth(), false));
+                    $currentStart,
+                    $currentEnd,
+                    self::getOrderMovement($goalEnd, $currentStart, $currentCount),
+                    self::getDepthMovement($current->getDepth(), $goal->getDepth(), false));
 
                 $this->repository->updateByOrder(
-                    $branchEnd + 1,
+                    $currentEnd + 1,
                     \null,
-                    $branchCount * (-1),
+                    $currentCount * (-1),
                     0);
             }
-        }
 
-        $this->repository->commitTransaction();
+            $this->repository->commitTransaction();
+        }
+        
+        else
+        {
+            throw new Exceptions\RuntimeException;
+        }
     }
 
     /**
      * @throws Exceptions\BadArgumentException
+     * @throws Exceptions\RuntimeException
      */
-    public function moveBranchAsFirstChild(INode $branch, INode $goal): void
+    public function moveBranchAsFirstChild(INode $current, INode $goal): void
     {
-        if (self::isRoot($branch))
+        if (self::isRoot($current))
         {
             throw new Exceptions\BadArgumentException("The whole tree cannot be moved!");
         }
 
-        $branchStart = $branch->getOrder();
-        $branchEnd = $this->repository->getEndOrder($branchStart, $branch->getDepth());
+        $currentStart = $current->getOrder();
+        $currentEnd = $this->repository->getEndOrder($currentStart, $current->getDepth());
         $goalStart = $goal->getOrder();
         $goalEnd = $this->repository->getEndOrder($goalStart, $goal->getDepth());
-        self::checkCrossing($branchStart, $branchEnd, $goalStart, $goalEnd);
+        self::checkCrossing($currentStart, $currentEnd, $goalStart, $goalEnd);
 
-        $this->repository->beginTransaction();
+        /**
+         * Current before goal
+         */
+        if ($currentEnd < $goalStart)
+        {
+            $this->repository->beginTransaction();
 
-        if ($branchStart < $goalStart && $branchEnd < $goalStart) {
-            $branchCount = self::getBranchCount($branchStart, $branchEnd);
-            $this->repository->updateParentByIdList([$branch->getId()], $goal->getId());
+            $newOrder = $goalStart + 1;
+            $currentCount = self::getBranchCount($currentStart, $currentEnd);
+            $this->repository->updateParentByIdList([$current->getId()], $goal->getId());
             $this->repository->updateByOrder(
-                $goalStart,
+                $newOrder,
                 \null,
-                $branchCount,
+                $currentCount,
                 0);
 
             $this->repository->updateByOrder(
-                $branchStart,
-                $branchEnd,
-                self::getOrderMovement($goalStart, $branchStart, $branchCount),
-                self::getDepthMovement($branch->getDepth(), $goal->getDepth(), true));
+                $currentStart,
+                $currentEnd,
+                self::getOrderMovement($newOrder, $currentStart, 0),
+                self::getDepthMovement($current->getDepth(), $goal->getDepth(), true));
 
             $this->repository->updateByOrder(
-                $branchStart,
+                $currentStart,
                 \null,
-                $branchCount * (-1),
+                $currentCount * (-1),
                 0);
+            
+            $this->repository->commitTransaction();
         }
 
-        if ($branchStart > $goalStart) {
-            $branchCount = self::getBranchCount($branchStart, $branchEnd);
+        /**
+         * Goal before current
+         */
+        elseif ($goalStart < $currentStart)
+        {
+            $this->repository->beginTransaction();
+            
+            $currentCount = self::getBranchCount($currentStart, $currentEnd);
             $orderFrom = $goalStart + 1;
-            $this->repository->updateParentByIdList([$branch->getId()], $goal->getId());
-            $this->repository->updateByOrder($orderFrom, \null, $branchCount, 0);
+            $this->repository->updateParentByIdList([$current->getId()], $goal->getId());
+            $this->repository->updateByOrder($orderFrom, \null, $currentCount, 0);
 
             $this->repository->updateByOrder(
-                $branchStart + $branchCount,
-                $branchEnd + $branchCount,
-                self::getOrderMovement($branchStart, $orderFrom, $branchCount) * (-1),
-                self::getDepthMovement($branch->getDepth(), $goal->getDepth(), true));
+                $currentStart + $currentCount,
+                $currentEnd + $currentCount,
+                self::getOrderMovement($currentStart, $orderFrom, $currentCount) * (-1),
+                self::getDepthMovement($current->getDepth(), $goal->getDepth(), true));
 
             $this->repository->updateByOrder(
-                $branchStart + $branchCount,
+                $currentStart + $currentCount,
                 \null,
-                $branchCount * (-1),
+                $currentCount * (-1),
                 0);
+            
+            $this->repository->commitTransaction();
         }
 
-        $this->repository->commitTransaction();
+        else
+        {
+            throw new Exceptions\RuntimeException;
+        }
     }
 
-    private static function checkCrossing(int $branchStart, int $branchEnd, int $goalStart, int $goalEnd): void
+    private static function checkCrossing(int $currentStart, int $currentEnd, int $goalStart, int $goalEnd): void
     {
         if (
-            ($branchStart === $goalStart)
-            || ($branchStart <= $goalStart && $goalStart <= $branchEnd)
-            || ($goalStart <= $branchStart && $branchStart <= $goalEnd && $goalEnd < $branchEnd)
+            ($currentStart === $goalStart)
+            || ($currentStart <= $goalStart && $goalStart <= $currentEnd)
+            || ($goalStart <= $currentStart && $currentStart <= $goalEnd && $goalEnd < $currentEnd)
         ) {
             throw new Exceptions\BadArgumentException("Goal destination cannot be in same branch or both must not cross together!");
         }
@@ -301,7 +371,7 @@ final class Tree
         $idList = [];
         $this->repository->beginTransaction();
         $endOrder = $this->repository->getEndOrder($node->getOrder(), $node->getDepth());
-        $nodeList = $this->repository->getNodesByParent($node->getId());
+        $nodeList = $this->repository->getNodeListByParent($node->getId());
 
         foreach ($nodeList as $n) {
             /* @var $n INode */
