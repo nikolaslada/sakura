@@ -1,9 +1,9 @@
 {
 	"name": "sakuraphp/sakura",
 	"type": "library",
-	"description": "Sakura library contains implementations of 4 methods, which can manage different types of hierarchical structure (tree) on relational database.",
-	"keywords": ["tree", "database", "traversal"],
-	"homepage": "http://sakuraphp.com",
+	"description": "Sakura library contains implementations of 3 methods, which can manage different types of hierarchical structure (tree) on relational database.",
+	"keywords": ["tree", "hierarchical", "traversal", "database", "rdbms"],
+	"homepage": "https://github.com/nikolaslada/sakura",
 	"license": ["GPL-2.0", "GPL-3.0", "LGPL-3.0"],
 	"authors": [
 		{
@@ -14,7 +14,9 @@
 	"require": {
 	},
 	"autoload": {
-		"classmap": ["src/"]
+        "psr-4": {
+            "Sakura\\": "src/"
+        }
 	},
 	"minimum-stability": "stable",
 	"require-dev": {
