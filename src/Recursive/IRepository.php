@@ -12,7 +12,7 @@ interface IRepository
      */
     public function addData(array $data): int;
 
-    public function getNodesByParent(int $id): array;
+    public function getNodeListByParent(int $id): NodeList;
 
     public function getParentById(int $id): ?int;
 
@@ -20,7 +20,7 @@ interface IRepository
 
     public function getNumberOfChilds(int $nodeId): int;
 
-    public function getIdsByParent(int $parent): array;
+    public function getIdListByParent(int $parent): array;
 
     /**
      * @throws Exceptions\NoRootException

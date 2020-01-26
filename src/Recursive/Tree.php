@@ -62,7 +62,7 @@ final class Tree
     private function appendIntoBranch(Branch $branch, int $maxDepth): void
     {
         $node = $branch->getRootNode();
-        $nodeList = $this->repository->getNodesByParent($node->getId());
+        $nodeList = $this->repository->getNodeListByParent($node->getId());
         
         foreach ($nodeList as $node)
         {
@@ -104,9 +104,13 @@ final class Tree
     /**
      * @throws Exceptions\NoExpectedNodeException
      */
-    public function getPath(INode $node, bool $isAscending = true): NodeList
+    public function getPath(INode $node, bool $isAscending = true, ?int $maxCount = \null): NodeList
     {
-        $list = $this->appendIntoList($node, []);
+        if (\is_null($maxCount)) {
+            $maxCount = PHP_INT_MAX;
+        }
+        
+        $list = $this->appendIntoList($node, [], $maxCount);
         
         if ($isAscending) {
             $reversed = \array_reverse($list, true);
@@ -116,7 +120,7 @@ final class Tree
         }
     }
     
-    private function appendIntoList(INode $node, array $list): array
+    private function appendIntoList(INode $node, array $list, int $maxCount): array
     {
         $list[$node->getId()] = $node;
         $parent = $node->getParent();
@@ -128,7 +132,7 @@ final class Tree
                 throw new Exceptions\NoExpectedNodeException('There is broken node or whole tree in ' . $this->table->getName() . ' table.');
             }
 
-            return $this->appendIntoList($parentNode, $list);
+            return $this->appendIntoList($parentNode, $list, --$maxCount);
         }
 
         return $list;
@@ -145,34 +149,34 @@ final class Tree
     /**
      * @throws Exceptions\BadArgumentException
      */
-    public function moveBranchAfter(INode $branch, INode $goal): void
+    public function moveBranchAfter(INode $current, INode $goal): void
     {
-        if (self::isRoot($branch) || self::isRoot($goal))
+        if (self::isRoot($current) || self::isRoot($goal))
         {
             throw new Exceptions\BadArgumentException("The whole tree cannot be moved and branch cannot be moved after root node!");
         }
 
-        $this->checkCrossing($branch, $goal);
-        $this->repository->updateParentByIdList([$branch->getId()], $goal->getParent());
+        $this->checkCrossing($current, $goal);
+        $this->repository->updateParentByIdList([$current->getId()], $goal->getParent());
     }
 
     /**
      * @throws Exceptions\BadArgumentException
      */
-    public function moveBranchAsChild(INode $branch, INode $goal): void
+    public function moveBranchAsChild(INode $current, INode $goal): void
     {
-        if (self::isRoot($branch))
+        if (self::isRoot($current))
         {
             throw new Exceptions\BadArgumentException("The whole tree cannot be moved!");
         }
 
-        $this->checkCrossing($branch, $goal);
-        $this->repository->updateParentByIdList([$branch->getId()], $goal->getId());
+        $this->checkCrossing($current, $goal);
+        $this->repository->updateParentByIdList([$current->getId()], $goal->getId());
     }
 
-    private function checkCrossing(INode $branch, INode $goal): void
+    private function checkCrossing(INode $current, INode $goal): void
     {
-        $branchBranch = $this->getBranch($branch);
+        $branchBranch = $this->getBranch($current);
 
         if ($branchBranch->existsNode($goal->getId())) {
             throw new Exceptions\BadArgumentException("Goal destination cannot be in same branch!");
@@ -191,7 +195,7 @@ final class Tree
 
         $this->repository->beginTransaction();
         
-        $idList = $this->repository->getIdsByParent($node->getId());
+        $idList = $this->repository->getIdListByParent($node->getId());
         $this->repository->updateParentByIdList($idList, $node->getParent());
         $this->repository->delete($node->getId());
         
