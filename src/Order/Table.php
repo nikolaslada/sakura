@@ -24,32 +24,38 @@ final class Table implements ITable {
     private $parentColumn;
     
     
-    public function __construct(string $name, string $idColumn, string $depthColumn, string $orderColumn, string $parentColumn) {
-      $this->name = $name;
-      $this->idColumn = $idColumn;
-      $this->depthColumn = $depthColumn;
-      $this->orderColumn = $orderColumn;
-      $this->parentColumn = $parentColumn;
+    public function __construct(string $name, string $idColumn, string $depthColumn, string $orderColumn, string $parentColumn)
+    {
+        $this->name = $name;
+        $this->idColumn = $idColumn;
+        $this->depthColumn = $depthColumn;
+        $this->orderColumn = $orderColumn;
+        $this->parentColumn = $parentColumn;
     }
 
-    public function getName(): string {
-      return $this->name;
+    public function getName(): string
+    {
+        return $this->name;
     }
 
-    public function getIdColumn(): string {
-      return $this->idColumn;
+    public function getIdColumn(): string
+    {
+        return $this->idColumn;
     }
 
-    public function getDepthColumn(): string {
-      return $this->depthColumn;
+    public function getDepthColumn(): string
+    {
+        return $this->depthColumn;
     }
 
-    public function getOrderColumn(): string {
-      return $this->orderColumn;
+    public function getOrderColumn(): string
+    {
+        return $this->orderColumn;
     }
 
-    public function getParentColumn(): string {
-      return $this->parentColumn;
+    public function getParentColumn(): string
+    {
+        return $this->parentColumn;
     }
 
 }

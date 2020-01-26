@@ -32,24 +32,29 @@ final class Table implements ITable {
       $this->parentColumn = $parentColumn;
     }
 
-    public function getName(): string {
-      return $this->name;
+    public function getName(): string
+    {
+        return $this->name;
     }
 
-    public function getIdColumn(): string {
-      return $this->idColumn;
+    public function getIdColumn(): string
+    {
+        return $this->idColumn;
     }
 
-    public function getLeftColumn(): string {
-      return $this->leftColumn;
+    public function getLeftColumn(): string
+    {
+        return $this->leftColumn;
     }
 
-    public function getRightColumn(): string {
-      return $this->rightColumn;
+    public function getRightColumn(): string
+    {
+        return $this->rightColumn;
     }
 
-    public function getParentColumn(): string {
-      return $this->parentColumn;
+    public function getParentColumn(): string
+    {
+        return $this->parentColumn;
     }
 
 }
